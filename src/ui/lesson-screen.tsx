@@ -1,0 +1,217 @@
+import { type FormEvent, Suspense, lazy, useCallback, useEffect, useMemo, useReducer, useRef, useState } from "react";
+import { backdropCacheKey } from "../cache/blob-cache";
+import { characterAnimation, currentLine, initialLessonState, lessonReducer } from "../lesson/lesson-progress";
+import type { PlayableLesson } from "../lesson/playable-lesson";
+import { LEARNER_SPEAKER } from "../schemas";
+import { FeedbackCard } from "./feedback-card";
+import { LineAudio } from "./line-audio";
+import { useServices } from "./services-context";
+import { useGeneratedMedia } from "./use-object-url";
+import { VoiceReply } from "./voice-reply";
+
+// three.js and the models load in their own chunk, after the lesson UI is on screen.
+const SceneView = lazy(() => import("../scene/scene-view").then((m) => ({ default: m.SceneView })));
+
+type Attempt = { kind: "text"; reply: string } | { kind: "voice"; audio: Blob };
+
+export interface LessonScreenProps {
+  lesson: PlayableLesson;
+  onExit: () => void;
+}
+
+const useBackdrop = (lesson: PlayableLesson): { url?: string } | undefined => {
+  const { backdrops } = useServices();
+  const { scenario } = lesson;
+  const wanted = lesson.backdrop !== undefined && lesson.backdrop.url === undefined;
+  const key = backdropCacheKey(scenario.id, scenario.setting);
+  const load = useCallback(
+    (signal: AbortSignal) => backdrops({ cacheKey: key, setting: scenario.setting, signal }),
+    [backdrops, key, scenario.setting],
+  );
+  const media = useGeneratedMedia(wanted ? load : null, key);
+  if (!lesson.backdrop) return undefined;
+  if (lesson.backdrop.url) return { url: lesson.backdrop.url };
+  return media.status === "ready" ? { url: media.url } : {};
+};
+
+export const LessonScreen = ({ lesson, onExit }: LessonScreenProps) => {
+  const { scenario, manifest } = lesson;
+  const { grader, voiceGrader } = useServices();
+  const reducer = useMemo(() => lessonReducer(scenario), [scenario]);
+  const [state, dispatch] = useReducer(reducer, scenario, initialLessonState);
+  const [reply, setReply] = useState("");
+  const [showTranslation, setShowTranslation] = useState(true);
+  const [autoPlay, setAutoPlay] = useState(true);
+  const [useVoice, setUseVoice] = useState(false);
+  const attempt = useRef<Attempt | null>(null);
+  const line = currentLine(scenario, state);
+  const backdrop = useBackdrop(lesson);
+  const speakerName = (id: string) => scenario.cast.find((member) => member.characterId === id)?.name ?? id;
+
+  useEffect(() => {
+    const current = attempt.current;
+    if (state.phase !== "grading" || !line || !current) return;
+    const controller = new AbortController();
+    const request = { scenario, line, signal: controller.signal };
+    const grading =
+      current.kind === "text" ? grader({ ...request, reply: current.reply }) : voiceGrader({ ...request, audio: current.audio });
+    // Drop the recording as soon as it's handed off.
+    attempt.current = null;
+    grading.then(
+      (result) => dispatch({ type: "graded", result }),
+      (error: unknown) => {
+        if (!controller.signal.aborted) {
+          dispatch({ type: "gradeFailed", message: error instanceof Error ? error.message : "Grading failed." });
+        }
+      },
+    );
+    return () => controller.abort();
+  }, [state.phase, line, grader, voiceGrader, scenario]);
+
+  const submit = (event: FormEvent) => {
+    event.preventDefault();
+    if (!reply.trim()) return;
+    attempt.current = { kind: "text", reply };
+    dispatch({ type: "submit" });
+  };
+
+  const submitVoice = useCallback((audio: Blob) => {
+    attempt.current = { kind: "voice", audio };
+    dispatch({ type: "submit" });
+  }, []);
+
+  const goNext = () => {
+    setReply("");
+    dispatch({ type: "continue" });
+  };
+
+  return (
+    <section className="lesson" aria-labelledby="lesson-title">
+      <div className="lesson-header">
+        <button type="button" className="secondary small" onClick={onExit}>
+          ← Lessons
+        </button>
+        <h2 id="lesson-title">{scenario.title}</h2>
+        <span className="pill">Spanish · {scenario.level}</span>
+      </div>
+
+      <div className="card">
+        <Suspense fallback={<div className="scene scene-fallback" role="status">Loading the 3D scene…</div>}>
+          <SceneView manifest={manifest} animation={characterAnimation(scenario, state)} backdrop={backdrop} />
+        </Suspense>
+      </div>
+
+      <div className="card panel">
+        <div>
+          <h3>Goals</h3>
+          <ul className="goals">
+            {scenario.goals.map((goal) => {
+              const done = state.completedGoalIds.includes(goal.id);
+              return (
+                <li key={goal.id} className={`goal ${done ? "done" : ""}`}>
+                  {done ? "✓ " : ""}
+                  {goal.description}
+                  <span className="visually-hidden">{done ? " (done)" : " (to do)"}</span>
+                </li>
+              );
+            })}
+          </ul>
+        </div>
+
+        <div className="toggles">
+          <label className="toggle">
+            <input type="checkbox" checked={showTranslation} onChange={(event) => setShowTranslation(event.target.checked)} />
+            <span>Show English</span>
+          </label>
+          <label className="toggle">
+            <input type="checkbox" checked={autoPlay} onChange={(event) => setAutoPlay(event.target.checked)} />
+            <span>Play voices</span>
+          </label>
+          <label className="toggle">
+            <input type="checkbox" checked={useVoice} onChange={(event) => setUseVoice(event.target.checked)} />
+            <span>Reply by voice (cloud)</span>
+          </label>
+        </div>
+
+        {line && (
+          <div className={`bubble ${line.speaker === LEARNER_SPEAKER ? "learner" : ""}`} aria-live="polite">
+            <span className="speaker">{line.speaker === LEARNER_SPEAKER ? "Your turn" : speakerName(line.speaker)}</span>
+            {line.speaker === LEARNER_SPEAKER ? (
+              <p className="line-text">Say: “{line.translation}”</p>
+            ) : (
+              <p className="line-text" lang={scenario.language}>
+                {line.text}
+              </p>
+            )}
+            {showTranslation && line.speaker !== LEARNER_SPEAKER && <p className="line-translation">{line.translation}</p>}
+          </div>
+        )}
+
+        {line && line.speaker !== LEARNER_SPEAKER && state.phase === "listening" && (
+          <LineAudio key={line.id} lessonId={scenario.id} line={line} language={scenario.language} autoPlay={autoPlay} />
+        )}
+
+        {state.phase === "listening" && (
+          <div className="actions">
+            <button type="button" onClick={() => dispatch({ type: "next" })}>
+              Next
+            </button>
+          </div>
+        )}
+
+        {(state.phase === "replying" || state.phase === "grading") && (
+          <form className="reply" onSubmit={submit}>
+            <label htmlFor="reply-input">Your reply in Spanish</label>
+            <div className="reply-row">
+              <input
+                id="reply-input"
+                type="text"
+                lang={scenario.language}
+                autoComplete="off"
+                value={reply}
+                onChange={(event) => setReply(event.target.value)}
+                disabled={state.phase === "grading"}
+              />
+              <button type="submit" disabled={state.phase === "grading" || !reply.trim()}>
+                {state.phase === "grading" ? "Checking…" : "Send"}
+              </button>
+            </div>
+            {state.error && (
+              <p className="error" role="alert">
+                {state.error}
+              </p>
+            )}
+            {useVoice && <VoiceReply disabled={state.phase === "grading"} onRecorded={submitVoice} />}
+          </form>
+        )}
+
+        {state.phase === "feedback" && state.lastResult && (
+          <>
+            <div aria-live="polite">
+              <FeedbackCard result={state.lastResult} />
+            </div>
+            <div className="actions">
+              {!state.lastResult.grade.ok && (
+                <button type="button" className="warm" onClick={() => dispatch({ type: "retry" })}>
+                  Try again
+                </button>
+              )}
+              <button type="button" className={state.lastResult.grade.ok ? "" : "secondary"} onClick={goNext}>
+                {state.lastResult.grade.ok ? "Continue" : "Skip"}
+              </button>
+            </div>
+          </>
+        )}
+
+        {state.phase === "done" && (
+          <div className="done-card" role="status">
+            <h3>¡Lección completa!</h3>
+            <p>
+              {state.completedGoalIds.length} of {scenario.goals.length} goals done.
+            </p>
+          </div>
+        )}
+      </div>
+    </section>
+  );
+};

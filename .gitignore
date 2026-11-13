@@ -1,0 +1,19 @@
+node_modules/
+dist/
+.env*
+!.env.example
+*.fbx
+assets-raw/
+*.log
+.DS_Store
+coverage/
+
+# Local planning docs (README is the only committed doc)
+documents/
+
+# Unlicensed test assets (local only)
+public/dev-assets/
+
+# Firebase CLI: project alias and deploy cache (see .firebaserc.example)
+.firebaserc
+.firebase/
