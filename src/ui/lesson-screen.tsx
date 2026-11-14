@@ -1,10 +1,14 @@
 import { type FormEvent, Suspense, lazy, useCallback, useEffect, useMemo, useReducer, useRef, useState } from "react";
 import { backdropCacheKey } from "../cache/blob-cache";
+import { LESSON_MODES, type LessonMode, MODE_SETTINGS } from "../lesson/lesson-mode";
 import { characterAnimation, currentLine, initialLessonState, lessonReducer } from "../lesson/lesson-progress";
 import type { PlayableLesson } from "../lesson/playable-lesson";
 import { LEARNER_SPEAKER } from "../schemas";
 import { FeedbackCard } from "./feedback-card";
-import { LineAudio } from "./line-audio";
+import { BreakdownCard } from "./breakdown-card";
+import { SceneBubble } from "./scene-bubble";
+import { VoicePicker } from "./voice-picker";
+import { useBreakdown } from "./use-breakdown";
 import { gradeErrorMessage } from "./grade-error-message";
 import { useServices } from "./services-context";
 import { useGeneratedMedia } from "./use-object-url";
@@ -17,6 +21,7 @@ type Attempt = { kind: "text"; reply: string } | { kind: "voice"; audio: Blob };
 
 export interface LessonScreenProps {
   lesson: PlayableLesson;
+  initialMode?: LessonMode;
   onExit: () => void;
   /** Called once when the learner reaches the end of the lesson. */
   onComplete?: () => void;
@@ -37,9 +42,9 @@ const useBackdrop = (lesson: PlayableLesson): { url?: string } | undefined => {
   return media.status === "ready" ? { url: media.url } : {};
 };
 
-export const LessonScreen = ({ lesson, onExit, onComplete }: LessonScreenProps) => {
+export const LessonScreen = ({ lesson, initialMode = "typing", onExit, onComplete }: LessonScreenProps) => {
   const { scenario, manifest } = lesson;
-  const { grader, voiceGrader } = useServices();
+  const { grader, voiceGrader, speechConnected } = useServices();
   const reducer = useMemo(() => lessonReducer(scenario), [scenario]);
   const [state, dispatch] = useReducer(reducer, scenario, initialLessonState);
   const completed = useRef(false);
@@ -49,12 +54,23 @@ export const LessonScreen = ({ lesson, onExit, onComplete }: LessonScreenProps) 
     onComplete?.();
   }, [state.phase, onComplete]);
   const [reply, setReply] = useState("");
-  const [showTranslation, setShowTranslation] = useState(true);
-  const [autoPlay, setAutoPlay] = useState(true);
+  const [mode, setMode] = useState<LessonMode>(initialMode);
+  const settings = MODE_SETTINGS[mode];
+  const [showTranslation, setShowTranslation] = useState(settings.showTranslation);
+  const [autoPlay, setAutoPlay] = useState(settings.autoPlay);
   const [useVoice, setUseVoice] = useState(false);
+  const voiceFirst = settings.voiceFirst;
+  const changeMode = (next: LessonMode) => {
+    setMode(next);
+    setShowTranslation(MODE_SETTINGS[next].showTranslation);
+    setAutoPlay(MODE_SETTINGS[next].autoPlay);
+  };
   const attempt = useRef<Attempt | null>(null);
   const line = currentLine(scenario, state);
   const backdrop = useBackdrop(lesson);
+  const breakdown = useBreakdown(line?.text ?? "", scenario.language, line?.translation ?? "");
+  // A learner line's Spanish is the answer, so its breakdown only unlocks after they've tried.
+  const canExplain = line !== undefined && (line.speaker !== LEARNER_SPEAKER || state.phase === "feedback" || state.phase === "done");
   const speakerName = (id: string) => scenario.cast.find((member) => member.characterId === id)?.name ?? id;
 
   useEffect(() => {
@@ -94,6 +110,31 @@ export const LessonScreen = ({ lesson, onExit, onComplete }: LessonScreenProps) 
     dispatch({ type: "continue" });
   };
 
+  const typedReply = (
+    <form onSubmit={submit}>
+      <label htmlFor="reply-input">Your reply in Spanish</label>
+      <div className="reply-row">
+        <input
+          id="reply-input"
+          type="text"
+          lang={scenario.language}
+          autoComplete="off"
+          value={reply}
+          onChange={(event) => setReply(event.target.value)}
+          disabled={state.phase === "grading"}
+        />
+        <button type="submit" disabled={state.phase === "grading" || !reply.trim()}>
+          {state.phase === "grading" ? "Checking…" : "Send"}
+        </button>
+      </div>
+    </form>
+  );
+  const replyError = state.error && (
+    <p className="error" role="alert">
+      {state.error}
+    </p>
+  );
+
   return (
     <section className="lesson" aria-labelledby="lesson-title">
       <div className="lesson-header">
@@ -101,13 +142,37 @@ export const LessonScreen = ({ lesson, onExit, onComplete }: LessonScreenProps) 
           ← Lessons
         </button>
         <h2 id="lesson-title">{scenario.title}</h2>
+        <fieldset className="mode-switch">
+          <legend className="visually-hidden">Lesson mode</legend>
+          {LESSON_MODES.map((id) => (
+            <label key={id} className={`mode-option ${mode === id ? "active" : ""}`}>
+              <input type="radio" name="lesson-mode" value={id} checked={mode === id} onChange={() => changeMode(id)} />
+              <span aria-hidden="true">{MODE_SETTINGS[id].icon}</span> {MODE_SETTINGS[id].label}
+            </label>
+          ))}
+        </fieldset>
         <span className="pill">Spanish · {scenario.level}</span>
       </div>
 
-      <div className="card">
+      <div className="card scene-stage">
         <Suspense fallback={<div className="scene scene-fallback" role="status">Loading the 3D scene…</div>}>
           <SceneView manifest={manifest} animation={characterAnimation(scenario, state)} backdrop={backdrop} />
         </Suspense>
+        {line && (
+          <SceneBubble
+            key={line.id}
+            lessonId={scenario.id}
+            line={line}
+            speakerName={speakerName(line.speaker)}
+            language={scenario.language}
+            showTranslation={showTranslation}
+            autoPlay={autoPlay && state.phase === "listening"}
+            onEnded={settings.autoAdvance && autoPlay && state.phase === "listening" ? () => dispatch({ type: "next" }) : undefined}
+            breakdown={canExplain && breakdown.state.status === "ready" ? breakdown.state.breakdown : undefined}
+            onExplain={canExplain ? breakdown.request : undefined}
+            explaining={breakdown.state.status === "loading"}
+          />
+        )}
       </div>
 
       <div className="card panel">
@@ -136,29 +201,17 @@ export const LessonScreen = ({ lesson, onExit, onComplete }: LessonScreenProps) 
             <input type="checkbox" checked={autoPlay} onChange={(event) => setAutoPlay(event.target.checked)} />
             <span>Play voices</span>
           </label>
-          <label className="toggle">
-            <input type="checkbox" checked={useVoice} onChange={(event) => setUseVoice(event.target.checked)} />
-            <span>Reply by voice (cloud)</span>
-          </label>
+          {!voiceFirst && (
+            <label className="toggle">
+              <input type="checkbox" checked={useVoice} onChange={(event) => setUseVoice(event.target.checked)} />
+              <span>Reply by voice (cloud)</span>
+            </label>
+          )}
         </div>
 
-        {line && (
-          <div className={`bubble ${line.speaker === LEARNER_SPEAKER ? "learner" : ""}`} aria-live="polite">
-            <span className="speaker">{line.speaker === LEARNER_SPEAKER ? "Your turn" : speakerName(line.speaker)}</span>
-            {line.speaker === LEARNER_SPEAKER ? (
-              <p className="line-text">Say: “{line.translation}”</p>
-            ) : (
-              <p className="line-text" lang={scenario.language}>
-                {line.text}
-              </p>
-            )}
-            {showTranslation && line.speaker !== LEARNER_SPEAKER && <p className="line-translation">{line.translation}</p>}
-          </div>
-        )}
+        <VoicePicker language={scenario.language} cloudAvailable={speechConnected} />
 
-        {line && line.speaker !== LEARNER_SPEAKER && state.phase === "listening" && (
-          <LineAudio key={line.id} lessonId={scenario.id} line={line} language={scenario.language} autoPlay={autoPlay} />
-        )}
+        {canExplain && <BreakdownCard state={breakdown.state} />}
 
         {state.phase === "listening" && (
           <div className="actions">
@@ -168,31 +221,29 @@ export const LessonScreen = ({ lesson, onExit, onComplete }: LessonScreenProps) 
           </div>
         )}
 
-        {(state.phase === "replying" || state.phase === "grading") && (
-          <form className="reply" onSubmit={submit}>
-            <label htmlFor="reply-input">Your reply in Spanish</label>
-            <div className="reply-row">
-              <input
-                id="reply-input"
-                type="text"
-                lang={scenario.language}
-                autoComplete="off"
-                value={reply}
-                onChange={(event) => setReply(event.target.value)}
-                disabled={state.phase === "grading"}
-              />
-              <button type="submit" disabled={state.phase === "grading" || !reply.trim()}>
-                {state.phase === "grading" ? "Checking…" : "Send"}
-              </button>
+        {(state.phase === "replying" || state.phase === "grading") &&
+          (voiceFirst ? (
+            <div className="reply speaking-reply">
+              <p className="speaking-prompt">Say it out loud in Spanish</p>
+              <VoiceReply primary disabled={state.phase === "grading"} onRecorded={submitVoice} />
+              {state.phase === "grading" && (
+                <p className="audio-note" role="status">
+                  Listening to your answer…
+                </p>
+              )}
+              {replyError}
+              <details className="type-instead">
+                <summary>Type instead</summary>
+                {typedReply}
+              </details>
             </div>
-            {state.error && (
-              <p className="error" role="alert">
-                {state.error}
-              </p>
-            )}
-            {useVoice && <VoiceReply disabled={state.phase === "grading"} onRecorded={submitVoice} />}
-          </form>
-        )}
+          ) : (
+            <div className="reply">
+              {typedReply}
+              {replyError}
+              {useVoice && <VoiceReply disabled={state.phase === "grading"} onRecorded={submitVoice} />}
+            </div>
+          ))}
 
         {state.phase === "feedback" && state.lastResult && (
           <>

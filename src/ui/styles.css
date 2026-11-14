@@ -826,3 +826,349 @@ button.chip {
 .streak-pill.lit {
   background: var(--butter);
 }
+
+/* Lesson modes */
+
+.reply form {
+  display: grid;
+  gap: 0.5rem;
+}
+
+.mode-switch {
+  display: inline-flex;
+  margin: 0;
+  padding: 0.2rem;
+  border: var(--outline);
+  border-radius: 999px;
+  background: var(--card);
+  margin-left: auto;
+}
+
+.mode-option {
+  position: relative;
+  padding: 0.25rem 0.8rem;
+  border-radius: 999px;
+  font-family: var(--font-display);
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.mode-option input {
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.mode-option.active {
+  background: var(--mint);
+}
+
+.mode-option:has(input:focus-visible) {
+  outline: 3px solid var(--sky);
+  outline-offset: 2px;
+}
+
+.speaking-reply {
+  justify-items: center;
+  text-align: center;
+}
+
+.speaking-prompt {
+  margin: 0;
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 1.1rem;
+}
+
+.speaking-reply .voice-reply {
+  justify-items: center;
+}
+
+.voice-reply .mic.primary {
+  justify-self: center;
+  font-size: 1.3rem;
+  padding: 0.9rem 1.8rem;
+  box-shadow: var(--lift);
+}
+
+.type-instead {
+  width: 100%;
+  text-align: left;
+}
+
+.type-instead summary {
+  cursor: pointer;
+  font-weight: 700;
+  color: var(--ink-soft);
+}
+
+.type-instead summary:focus-visible {
+  outline: 3px solid var(--sky);
+  outline-offset: 2px;
+}
+
+.lesson-play-buttons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+/* Speech bubble over the scene */
+
+.scene-stage {
+  position: relative;
+}
+
+.scene-bubble {
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  width: min(26rem, calc(100% - 1.5rem));
+  padding: 0.65rem 0.9rem;
+  border: var(--outline);
+  border-radius: var(--radius);
+  background: var(--card);
+  box-shadow: 0 4px 0 var(--ink);
+}
+
+.scene-bubble.character {
+  top: 0.75rem;
+  left: 0.75rem;
+  transform: none;
+  width: min(20rem, 42%);
+}
+
+/* Tail pointing right, toward the character standing in the middle. */
+.scene-bubble.character::after {
+  content: "";
+  position: absolute;
+  top: 1.4rem;
+  right: -0.68rem;
+  width: 1.1rem;
+  height: 1.1rem;
+  background: var(--card);
+  border-top: var(--outline);
+  border-right: var(--outline);
+  transform: rotate(45deg);
+}
+
+.scene-bubble.learner {
+  bottom: 0.75rem;
+  background: var(--lilac);
+}
+
+.scene-bubble .line-text {
+  font-size: 1.15rem;
+}
+
+.bubble-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.4rem;
+  margin-top: 0.4rem;
+}
+
+.speak-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0.2rem 0.65rem;
+  font-size: 0.9rem;
+  background: var(--butter);
+  box-shadow: 0 3px 0 var(--ink);
+}
+
+.speak-button.playing {
+  background: var(--mint);
+}
+
+.bubble-note {
+  font-size: 0.8rem;
+  color: var(--ink-soft);
+}
+
+/* On phones the bubble would hide the character, so it sits under the scene instead. */
+@media (max-width: 40rem) {
+  .scene-bubble,
+  .scene-bubble.character {
+    position: static;
+    transform: none;
+    width: auto;
+    margin: 0.6rem;
+    box-shadow: none;
+  }
+
+  .scene-bubble.character::after {
+    display: none;
+  }
+
+  .scene-bubble .line-text {
+    font-size: 1rem;
+  }
+}
+
+/* Grammar breakdown */
+
+.word-wrap {
+  position: relative;
+  display: inline-block;
+}
+
+.word {
+  all: unset;
+  cursor: help;
+  border-bottom: 3px solid var(--role, var(--ink-soft));
+  border-radius: 2px;
+}
+
+.word:focus-visible {
+  outline: 3px solid var(--sky);
+  outline-offset: 2px;
+}
+
+.word-tip {
+  position: absolute;
+  z-index: 5;
+  left: 50%;
+  top: calc(100% + 0.4rem);
+  transform: translateX(-50%);
+  width: max-content;
+  max-width: 14rem;
+  padding: 0.35rem 0.6rem;
+  border: 2px solid var(--ink);
+  border-radius: var(--radius-small);
+  background: var(--card);
+  font-family: var(--font-body);
+  font-size: 0.85rem;
+  font-weight: 600;
+  line-height: 1.35;
+  visibility: hidden;
+}
+
+.word-wrap:hover .word-tip,
+.word:focus-visible + .word-tip {
+  visibility: visible;
+}
+
+.word-note {
+  display: block;
+  color: var(--ink-soft);
+  font-weight: 600;
+}
+
+.role-noun { --role: #5fb98f; }
+.role-verb { --role: #ff7f8a; }
+.role-adjective { --role: #f2a541; }
+.role-adverb { --role: #b48ae8; }
+.role-pronoun { --role: #4fa3d9; }
+.role-article,
+.role-preposition,
+.role-conjunction { --role: #9a93ad; }
+.role-interjection,
+.role-phrase { --role: #e6b800; }
+
+.breakdown-card {
+  display: grid;
+  gap: 0.4rem;
+  padding: 0.7rem 0.85rem;
+  border: 2px dashed var(--ink);
+  border-radius: var(--radius-small);
+}
+
+.breakdown-card h3 {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin: 0;
+  font-size: 1rem;
+}
+
+.breakdown-words {
+  display: grid;
+  gap: 0.3rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.breakdown-words li {
+  padding-left: 0.6rem;
+  border-left: 4px solid var(--role, var(--ink-soft));
+}
+
+.breakdown-word {
+  font-weight: 800;
+}
+
+.breakdown-role {
+  font-size: 0.8rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  color: var(--ink-soft);
+}
+
+.breakdown-structure {
+  margin: 0;
+}
+
+/* Voice picker */
+
+.voice-picker {
+  display: grid;
+  gap: 0.35rem;
+}
+
+.voice-picker label {
+  font-family: var(--font-display);
+  font-weight: 600;
+}
+
+.voice-picker-row {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.voice-picker select {
+  flex: 1;
+  min-width: 0;
+  padding: 0.4rem 0.6rem;
+  border: var(--outline);
+  border-radius: var(--radius-small);
+  background: var(--card);
+  color: var(--ink);
+  font: inherit;
+  font-weight: 600;
+}
+
+.voice-picker select:focus-visible,
+.link-button:focus-visible {
+  outline: 3px solid var(--sky);
+  outline-offset: 2px;
+}
+
+.link-button {
+  all: unset;
+  justify-self: start;
+  color: var(--mint-deep);
+  font-weight: 800;
+  font-size: 0.9rem;
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+.voice-help {
+  padding: 0.6rem 0.8rem;
+  border: 2px dashed var(--ink);
+  border-radius: var(--radius-small);
+  font-size: 0.9rem;
+}
+
+.voice-help p {
+  margin: 0;
+}
+
+.voice-help ol {
+  margin: 0.35rem 0 0.5rem;
+  padding-left: 1.2rem;
+}

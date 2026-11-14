@@ -9,6 +9,7 @@ const TASK_LABEL: Record<ModelEvent["task"], string> = {
   generate: "Write lesson",
   paint: "Paint backdrop",
   speak: "Character voice",
+  explain: "Grammar breakdown",
 };
 
 const ms = (value: number | null) => (value === null ? "–" : `${value} ms`);

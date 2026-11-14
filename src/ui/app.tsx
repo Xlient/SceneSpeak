@@ -3,6 +3,7 @@ import type { AuthClient } from "../auth/auth-client";
 import { createDefaultAuth } from "../auth/default-auth";
 import { COMMUNITY_LESSONS } from "../lesson/community/community-lessons";
 import { FEATURED_LESSONS } from "../lesson/featured/featured-lessons";
+import type { LessonMode } from "../lesson/lesson-mode";
 import { type PlayableLesson, buildPlayableLesson } from "../lesson/playable-lesson";
 import { type AppServices, createAppServices, createLiveServices } from "../services/app-services";
 import { AccountButton } from "./account-button";
@@ -15,7 +16,7 @@ import { ServicesProvider } from "./services-context";
 import { StreakPill } from "./streak-pill";
 import { usePractice } from "./use-practice";
 
-type Screen = { kind: "home" } | { kind: "create" } | { kind: "lesson"; lesson: PlayableLesson };
+type Screen = { kind: "home" } | { kind: "create" } | { kind: "lesson"; lesson: PlayableLesson; mode: LessonMode };
 
 /** `auth: null` turns accounts off; omitted, it uses Firebase Auth when configured. */
 export const App = ({ services, auth }: { services?: AppServices; auth?: AuthClient | null }) => {
@@ -56,11 +57,11 @@ export const App = ({ services, auth }: { services?: AppServices; auth?: AuthCli
                 featured={FEATURED_LESSONS}
                 community={COMMUNITY_LESSONS}
                 onCreate={() => setScreen({ kind: "create" })}
-                onPlay={(featured) => setScreen({ kind: "lesson", lesson: buildPlayableLesson(featured.scenario, featured.recipe) })}
+                onPlay={(featured, mode) => setScreen({ kind: "lesson", lesson: buildPlayableLesson(featured.scenario, featured.recipe), mode })}
               />
             )}
-            {screen.kind === "create" && <CreateLessonScreen onCancel={home} onReady={(lesson) => setScreen({ kind: "lesson", lesson })} />}
-            {screen.kind === "lesson" && <LessonScreen key={screen.lesson.scenario.id} lesson={screen.lesson} onExit={home} onComplete={practice.finishLesson} />}
+            {screen.kind === "create" && <CreateLessonScreen onCancel={home} onReady={(lesson) => setScreen({ kind: "lesson", lesson, mode: "typing" })} />}
+            {screen.kind === "lesson" && <LessonScreen key={screen.lesson.scenario.id} lesson={screen.lesson} initialMode={screen.mode} onExit={home} onComplete={practice.finishLesson} />}
           </main>
           {monitorOpen && (
             <div id="monitor">

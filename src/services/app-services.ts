@@ -3,6 +3,7 @@ import type { BackdropPainter, SpeechSource } from "../audio/media-sources";
 import { unavailableBackdrops, unavailableSpeech } from "../audio/media-sources";
 import { type BlobStore, cachedBlobSource, createCacheStorageStore } from "../cache/blob-cache";
 import { type LessonGenerator, unavailableGenerator } from "../lesson/generator";
+import { type SentenceExplainer, unavailableExplainer } from "../lesson/sentence-breakdown";
 import { type Grader, unavailableGrader } from "../lesson/grader";
 import { type VoiceGrader, unavailableVoiceGrader } from "../lesson/voice-grader";
 import { createLiveGrader } from "./live-grader";
@@ -26,7 +27,10 @@ export interface AppServices {
   generator: LessonGenerator;
   speech: SpeechSource;
   backdrops: BackdropPainter;
+  explainer: SentenceExplainer;
   deviceSetup: DeviceSetup;
+  /** False while `speech` is the stub, so the UI can say the AI voice is coming. */
+  speechConnected: boolean;
   monitor: ModelMonitor;
 }
 
@@ -36,6 +40,7 @@ export interface RawServices {
   generator: LessonGenerator;
   speech: SpeechSource;
   backdrops: BackdropPainter;
+  explainer: SentenceExplainer;
   deviceSetup: DeviceSetup;
 }
 
@@ -45,6 +50,7 @@ export const STUB_SERVICES: RawServices = {
   generator: unavailableGenerator,
   speech: unavailableSpeech,
   backdrops: unavailableBackdrops,
+  explainer: unavailableExplainer,
   deviceSetup: browserDeviceSetup,
 };
 
@@ -70,9 +76,11 @@ export const createAppServices = (raw: RawServices = STUB_SERVICES, stores: Serv
   return {
     monitor,
     deviceSetup: raw.deviceSetup,
+    speechConnected: raw.speech !== unavailableSpeech,
     grader: monitored(monitor, "grade", raw.grader, (r) => r.source, "on_device"),
     voiceGrader: monitored(monitor, "grade-voice", raw.voiceGrader, (r) => r.source, "in_cloud"),
     generator: monitored(monitor, "generate", raw.generator, () => "in_cloud", "in_cloud"),
+    explainer: monitored(monitor, "explain", raw.explainer, (r) => r.source, "on_device"),
     speech: cachedBlobSource(monitored(monitor, "speak", raw.speech, () => "in_cloud", "in_cloud"), stores.speech),
     backdrops: cachedBlobSource(monitored(monitor, "paint", raw.backdrops, () => "in_cloud", "in_cloud"), stores.backdrops),
   };

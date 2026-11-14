@@ -1,10 +1,11 @@
 import type { LoadedCommunityLesson } from "../lesson/community/community-lesson";
 import type { FeaturedLesson } from "../lesson/featured/featured-lessons";
+import type { LessonMode } from "../lesson/lesson-mode";
 
 const LANGUAGE_NAMES = new Intl.DisplayNames(["en"], { type: "language" });
 const languageName = (code: string) => LANGUAGE_NAMES.of(code) ?? code;
 
-const LessonCard = ({ lesson, onPlay, credit }: { lesson: FeaturedLesson; onPlay: (lesson: FeaturedLesson) => void; credit?: string }) => (
+const LessonCard = ({ lesson, onPlay, credit }: { lesson: FeaturedLesson; onPlay: (lesson: FeaturedLesson, mode: LessonMode) => void; credit?: string }) => (
   <li className="card lesson-card">
     <span className="lesson-emoji" aria-hidden="true">
       {lesson.emoji}
@@ -15,16 +16,21 @@ const LessonCard = ({ lesson, onPlay, credit }: { lesson: FeaturedLesson; onPlay
       {languageName(lesson.scenario.language)} · {lesson.scenario.level}
     </p>
     {credit && <p className="lesson-credit">{credit}</p>}
-    <button type="button" onClick={() => onPlay(lesson)} aria-label={`Play ${lesson.scenario.title}`}>
-      Play
-    </button>
+    <div className="lesson-play-buttons">
+      <button type="button" onClick={() => onPlay(lesson, "typing")} aria-label={`Play ${lesson.scenario.title}`}>
+        Play
+      </button>
+      <button type="button" className="secondary" onClick={() => onPlay(lesson, "speaking")} aria-label={`Speak ${lesson.scenario.title}`}>
+        🎙️ Speak
+      </button>
+    </div>
   </li>
 );
 
 export interface HomeScreenProps {
   featured: readonly FeaturedLesson[];
   community: readonly LoadedCommunityLesson[];
-  onPlay: (lesson: FeaturedLesson) => void;
+  onPlay: (lesson: FeaturedLesson, mode: LessonMode) => void;
   onCreate: () => void;
 }
 

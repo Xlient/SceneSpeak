@@ -5,6 +5,8 @@ import { useRecorder } from "../audio/use-recorder";
 export interface VoiceReplyProps {
   disabled: boolean;
   onRecorded: (audio: Blob) => void;
+  /** Bigger mic button, for Speaking mode. */
+  primary?: boolean;
 }
 
 const STATUS_TEXT = {
@@ -16,7 +18,7 @@ const STATUS_TEXT = {
 } as const;
 
 /** Push-to-talk. The recording stays in memory, goes to cloud grading once, then is dropped. */
-export const VoiceReply = ({ disabled, onRecorded }: VoiceReplyProps) => {
+export const VoiceReply = ({ disabled, onRecorded, primary = false }: VoiceReplyProps) => {
   const { state, start, stop } = useRecorder(onRecorded);
   const noteId = useId();
   const recording = state.status === "recording";
@@ -26,7 +28,7 @@ export const VoiceReply = ({ disabled, onRecorded }: VoiceReplyProps) => {
     <div className="voice-reply">
       <button
         type="button"
-        className={`mic ${recording ? "recording" : ""}`}
+        className={`mic ${primary ? "primary" : ""} ${recording ? "recording" : ""}`}
         aria-pressed={recording}
         aria-describedby={noteId}
         disabled={disabled || state.status === "unsupported" || state.status === "requesting"}
