@@ -5,18 +5,20 @@ import { type BlobStore, cachedBlobSource, createCacheStorageStore } from "../ca
 import { type LessonGenerator, unavailableGenerator } from "../lesson/generator";
 import { type Grader, unavailableGrader } from "../lesson/grader";
 import { type VoiceGrader, unavailableVoiceGrader } from "../lesson/voice-grader";
+import { type DeviceStatusStore, createDeviceStatusStore } from "./device-status-store";
 import { createLiveGrader } from "./live-grader";
 import { type ModelMonitor, createModelMonitor, monitored } from "../monitor/model-monitor";
 
 export interface DeviceSetup {
-  isSupported: () => boolean;
-  initialize: (onStatus: (status: DeviceModelStatus) => void, options?: { signal?: AbortSignal }) => Promise<DeviceModelStatus>;
+  status: DeviceStatusStore;
+  /** Starts setup; must be called straight from a click. Progress lands in `status`. */
+  initialize: (options?: { signal?: AbortSignal }) => Promise<DeviceModelStatus>;
 }
 
 /** Real setup even in stub mode: it reports "not-supported" or "unavailable" on its own when it can't run. */
-export const browserDeviceSetup: DeviceSetup = {
-  isSupported: () => hasPromptApi(),
-  initialize: (onStatus, options) => initDeviceModel(onStatus, options),
+export const createBrowserDeviceSetup = (): DeviceSetup => {
+  const status = createDeviceStatusStore(hasPromptApi() ? { kind: "idle" } : { kind: "not-supported" });
+  return { status, initialize: (options) => initDeviceModel(status.set, options) };
 };
 
 /** Every AI-backed capability the UI uses. Real implementations replace the stubs in `createAppServices`. */
@@ -45,14 +47,18 @@ export const STUB_SERVICES: RawServices = {
   generator: unavailableGenerator,
   speech: unavailableSpeech,
   backdrops: unavailableBackdrops,
-  deviceSetup: browserDeviceSetup,
+  deviceSetup: createBrowserDeviceSetup(),
 };
 
 /** Stubs plus every capability that's wired to real AI so far. */
-export const createLiveServices = (): RawServices => ({
-  ...STUB_SERVICES,
-  grader: createLiveGrader(),
-});
+export const createLiveServices = (): RawServices => {
+  const deviceSetup = createBrowserDeviceSetup();
+  return {
+    ...STUB_SERVICES,
+    deviceSetup,
+    grader: createLiveGrader({ deviceStatus: deviceSetup.status.get }),
+  };
+};
 
 export interface ServiceStores {
   speech: BlobStore;
@@ -70,8 +76,8 @@ export const createAppServices = (raw: RawServices = STUB_SERVICES, stores: Serv
   return {
     monitor,
     deviceSetup: raw.deviceSetup,
-    grader: monitored(monitor, "grade", raw.grader, (r) => r.source, "on_device"),
-    voiceGrader: monitored(monitor, "grade-voice", raw.voiceGrader, (r) => r.source, "in_cloud"),
+    grader: monitored(monitor, "grade", raw.grader, (r) => r.source, "on_device", { routeOf: (r) => r.route }),
+    voiceGrader: monitored(monitor, "grade-voice", raw.voiceGrader, (r) => r.source, "in_cloud", { routeOf: (r) => r.route }),
     generator: monitored(monitor, "generate", raw.generator, () => "in_cloud", "in_cloud"),
     speech: cachedBlobSource(monitored(monitor, "speak", raw.speech, () => "in_cloud", "in_cloud"), stores.speech),
     backdrops: cachedBlobSource(monitored(monitor, "paint", raw.backdrops, () => "in_cloud", "in_cloud"), stores.backdrops),

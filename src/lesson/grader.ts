@@ -15,6 +15,8 @@ export interface GradeResult {
   source: InferenceSource;
   /** What the model heard, for voice replies. */
   transcript?: string;
+  /** Why it ran where it did (Y4 routing), for the Model Monitor. */
+  route?: string;
 }
 
 export type Grader = (request: GradeRequest) => Promise<GradeResult>;

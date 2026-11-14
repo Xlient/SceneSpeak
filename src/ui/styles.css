@@ -772,6 +772,13 @@ button.chip {
   font-size: 0.85rem;
 }
 
+.monitor-route {
+  display: block;
+  margin-top: 0.2rem;
+  font-size: 0.75rem;
+  color: var(--ink-soft);
+}
+
 .monitor-table th,
 .monitor-table td {
   padding: 0.3rem 0.25rem;

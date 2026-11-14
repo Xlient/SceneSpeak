@@ -1,12 +1,9 @@
-import { useCallback, useEffect, useRef, useState } from "react";
-import type { DeviceModelStatus } from "../ai/device";
+import { useCallback, useEffect, useRef, useSyncExternalStore } from "react";
 import { useServices } from "./services-context";
 
 export const useDeviceModel = () => {
   const { deviceSetup } = useServices();
-  const [status, setStatus] = useState<DeviceModelStatus>(() =>
-    deviceSetup.isSupported() ? { kind: "idle" } : { kind: "not-supported" },
-  );
+  const status = useSyncExternalStore(deviceSetup.status.subscribe, deviceSetup.status.get);
   const controller = useRef<AbortController | null>(null);
 
   useEffect(() => () => controller.current?.abort(), []);
@@ -15,7 +12,7 @@ export const useDeviceModel = () => {
   const setUp = useCallback(() => {
     controller.current?.abort();
     controller.current = new AbortController();
-    void deviceSetup.initialize(setStatus, { signal: controller.current.signal });
+    void deviceSetup.initialize({ signal: controller.current.signal });
   }, [deviceSetup]);
 
   return { status, setUp };
