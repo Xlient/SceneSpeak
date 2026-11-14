@@ -48,14 +48,14 @@ describe("monitored", () => {
 
   it("records where a call ran and how long it took", async () => {
     const monitor = createModelMonitor();
-    const call = monitored(monitor, "grade", (n: number) => Promise.resolve({ n, source: "in_cloud" as const }), (r) => r.source, "on_device", clock());
+    const call = monitored(monitor, "grade", (n: number) => Promise.resolve({ n, source: "in_cloud" as const }), (r) => r.source, "on_device", { now: clock() });
     await call(1);
     expect(monitor.events()[0]).toMatchObject({ task: "grade", source: "in_cloud", latencyMs: 10, ok: true });
   });
 
   it("records failures and rethrows", async () => {
     const monitor = createModelMonitor();
-    const call = monitored(monitor, "paint", () => Promise.reject(new Error("boom")), () => "in_cloud", "in_cloud", clock());
+    const call = monitored(monitor, "paint", () => Promise.reject(new Error("boom")), () => "in_cloud", "in_cloud", { now: clock() });
     await expect(call(undefined)).rejects.toThrow("boom");
     expect(monitor.events()[0]).toMatchObject({ ok: false, source: "in_cloud" });
   });

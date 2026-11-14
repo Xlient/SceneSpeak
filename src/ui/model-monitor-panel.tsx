@@ -74,6 +74,7 @@ export const ModelMonitorPanel = ({ onClose }: { onClose: () => void }) => {
                   <span className={`badge ${event.source === "on_device" ? "device" : "cloud"}`}>
                     {event.source === "on_device" ? "Device" : "Cloud"}
                   </span>
+                  {event.route && <span className="monitor-route">{event.route}</span>}
                 </td>
                 <td>{Math.round(event.latencyMs)} ms</td>
                 <td>{event.ok ? "OK" : "Failed"}</td>

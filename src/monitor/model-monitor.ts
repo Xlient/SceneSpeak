@@ -11,6 +11,8 @@ export interface ModelEvent {
   latencyMs: number;
   ok: boolean;
   at: number;
+  /** Routing reason, when the call was routed (Y4). */
+  route?: string;
 }
 
 export type NewModelEvent = Omit<ModelEvent, "id">;
@@ -76,13 +78,14 @@ export const monitored =
     call: (request: Req) => Promise<Res>,
     sourceOf: (result: Res) => InferenceSource,
     failedSource: InferenceSource,
-    now: () => number = () => performance.now(),
+    { routeOf, now = () => performance.now() }: { routeOf?: (result: Res) => string | undefined; now?: () => number } = {},
   ) =>
   async (request: Req): Promise<Res> => {
     const start = now();
     try {
       const result = await call(request);
-      monitor.record({ task, source: sourceOf(result), latencyMs: now() - start, ok: true, at: Date.now() });
+      const route = routeOf?.(result);
+      monitor.record({ task, source: sourceOf(result), latencyMs: now() - start, ok: true, at: Date.now(), ...(route ? { route } : {}) });
       return result;
     } catch (error) {
       if (error instanceof NotConnectedError) throw error;
