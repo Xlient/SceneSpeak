@@ -109,6 +109,20 @@ button,
   background: var(--mint);
 }
 
+.dot.busy {
+  background: var(--butter);
+}
+
+.dot.error {
+  background: var(--rose);
+}
+
+.pill-progress {
+  width: 4.5rem;
+  height: 0.7rem;
+  accent-color: var(--mint-deep);
+}
+
 .lesson {
   display: grid;
   gap: 1rem;

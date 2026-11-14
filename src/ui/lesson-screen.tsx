@@ -5,6 +5,7 @@ import type { PlayableLesson } from "../lesson/playable-lesson";
 import { LEARNER_SPEAKER } from "../schemas";
 import { FeedbackCard } from "./feedback-card";
 import { LineAudio } from "./line-audio";
+import { gradeErrorMessage } from "./grade-error-message";
 import { useServices } from "./services-context";
 import { useGeneratedMedia } from "./use-object-url";
 import { VoiceReply } from "./voice-reply";
@@ -69,7 +70,7 @@ export const LessonScreen = ({ lesson, onExit, onComplete }: LessonScreenProps) 
       (result) => dispatch({ type: "graded", result }),
       (error: unknown) => {
         if (!controller.signal.aborted) {
-          dispatch({ type: "gradeFailed", message: error instanceof Error ? error.message : "Grading failed." });
+          dispatch({ type: "gradeFailed", message: gradeErrorMessage(error) });
         }
       },
     );

@@ -1,10 +1,23 @@
+import { type DeviceModelStatus, hasPromptApi, initDeviceModel } from "../ai/device";
 import type { BackdropPainter, SpeechSource } from "../audio/media-sources";
 import { unavailableBackdrops, unavailableSpeech } from "../audio/media-sources";
 import { type BlobStore, cachedBlobSource, createCacheStorageStore } from "../cache/blob-cache";
 import { type LessonGenerator, unavailableGenerator } from "../lesson/generator";
 import { type Grader, unavailableGrader } from "../lesson/grader";
 import { type VoiceGrader, unavailableVoiceGrader } from "../lesson/voice-grader";
+import { createLiveGrader } from "./live-grader";
 import { type ModelMonitor, createModelMonitor, monitored } from "../monitor/model-monitor";
+
+export interface DeviceSetup {
+  isSupported: () => boolean;
+  initialize: (onStatus: (status: DeviceModelStatus) => void, options?: { signal?: AbortSignal }) => Promise<DeviceModelStatus>;
+}
+
+/** Real setup even in stub mode: it reports "not-supported" or "unavailable" on its own when it can't run. */
+export const browserDeviceSetup: DeviceSetup = {
+  isSupported: () => hasPromptApi(),
+  initialize: (onStatus, options) => initDeviceModel(onStatus, options),
+};
 
 /** Every AI-backed capability the UI uses. Real implementations replace the stubs in `createAppServices`. */
 export interface AppServices {
@@ -13,6 +26,7 @@ export interface AppServices {
   generator: LessonGenerator;
   speech: SpeechSource;
   backdrops: BackdropPainter;
+  deviceSetup: DeviceSetup;
   monitor: ModelMonitor;
 }
 
@@ -22,6 +36,7 @@ export interface RawServices {
   generator: LessonGenerator;
   speech: SpeechSource;
   backdrops: BackdropPainter;
+  deviceSetup: DeviceSetup;
 }
 
 export const STUB_SERVICES: RawServices = {
@@ -30,7 +45,14 @@ export const STUB_SERVICES: RawServices = {
   generator: unavailableGenerator,
   speech: unavailableSpeech,
   backdrops: unavailableBackdrops,
+  deviceSetup: browserDeviceSetup,
 };
+
+/** Stubs plus every capability that's wired to real AI so far. */
+export const createLiveServices = (): RawServices => ({
+  ...STUB_SERVICES,
+  grader: createLiveGrader(),
+});
 
 export interface ServiceStores {
   speech: BlobStore;
@@ -47,6 +69,7 @@ export const createAppServices = (raw: RawServices = STUB_SERVICES, stores: Serv
   const monitor = createModelMonitor();
   return {
     monitor,
+    deviceSetup: raw.deviceSetup,
     grader: monitored(monitor, "grade", raw.grader, (r) => r.source, "on_device"),
     voiceGrader: monitored(monitor, "grade-voice", raw.voiceGrader, (r) => r.source, "in_cloud"),
     generator: monitored(monitor, "generate", raw.generator, () => "in_cloud", "in_cloud"),

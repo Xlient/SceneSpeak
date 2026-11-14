@@ -45,14 +45,22 @@ if (!isSupported())
     }
 report({ kind: "checking" })
 
+// The SDK can't cancel the download, so progress may keep arriving after we've settled.
+let finished = false;
+
 try {
   const model = createSetupModel()
   await withTimeout(
-    () => model.initializeDeviceModel((p) => report({ kind: "downloading", progress: Math.min(1, Math.max(0, p)) })),
+    () =>
+      model.initializeDeviceModel((p) => {
+        if (!finished) report({ kind: "downloading", progress: Math.min(1, Math.max(0, p)) });
+      }),
     { timeoutMs: options.timeoutMs ?? 10 * 60_000, signal: options.signal },
   )
+  finished = true;
   return report({ kind: "ready" })
 } catch (error) {
+  finished = true;
   if (error instanceof AiAbortedError){ return report({ kind: "idle" })}
   else {
   return report({ kind: "unavailable", reason: error instanceof Error ? error.message : String(error) })

@@ -1,0 +1,12 @@
+import { FirebaseConfigError } from "../ai/config";
+import { GradeParseError } from "../ai/grade-parse";
+import { AiTimeoutError } from "../ai/with-timeout";
+import { NotConnectedError } from "../services/not-connected";
+
+export const gradeErrorMessage = (error: unknown): string => {
+  if (error instanceof AiTimeoutError) return "Grading took too long. Please try again.";
+  if (error instanceof GradeParseError) return "The grader got mixed up on that one. Please try again.";
+  if (error instanceof FirebaseConfigError) return "AI grading isn't set up in this copy of SceneSpeak yet.";
+  if (error instanceof NotConnectedError) return error.message;
+  return "Grading failed. Check your connection and try again.";
+};

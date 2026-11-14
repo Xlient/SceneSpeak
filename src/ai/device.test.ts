@@ -112,4 +112,21 @@ describe("initDeviceModel", () => {
     await expect(promise).resolves.toEqual({ kind: "idle" });
     expect(statuses.at(-1)).toEqual({ kind: "idle" });
   });
+
+  it("ignores progress that arrives after setup has finished (Chrome keeps downloading after a cancel)", async () => {
+    const controller = new AbortController();
+    let lateProgress: ((progress: number) => void) | undefined;
+    const model = setupModel((onProgress) => {
+      lateProgress = onProgress;
+      return new Promise(() => {});
+    });
+    const { statuses, onStatus } = collect();
+    const promise = initDeviceModel(onStatus, { signal: controller.signal }, { isSupported: supported, createSetupModel: () => model });
+
+    controller.abort();
+    await promise;
+    lateProgress?.(0.5);
+
+    expect(statuses.at(-1)).toEqual({ kind: "idle" });
+  });
 });
