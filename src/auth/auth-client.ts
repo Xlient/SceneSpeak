@@ -2,6 +2,8 @@ export interface AuthUser {
   uid: string;
   isAnonymous: boolean;
   displayName?: string;
+  /** Profile picture from the sign-in provider (https only). */
+  photoURL?: string;
 }
 
 /** What the UI needs from auth; the Firebase version lives in `firebase-auth-client.ts`. */

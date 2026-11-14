@@ -15,6 +15,12 @@ describe("toAuthUser", () => {
     expect(toAuthUser({ uid: "u1", isAnonymous: true, displayName: "  " })).toEqual({ uid: "u1", isAnonymous: true });
   });
 
+  it("keeps an https photo and drops anything else", () => {
+    expect(toAuthUser({ uid: "u1", isAnonymous: false, photoURL: "https://lh3.googleusercontent.com/a/x" })?.photoURL).toBe("https://lh3.googleusercontent.com/a/x");
+    expect(toAuthUser({ uid: "u1", isAnonymous: false, photoURL: "javascript:alert(1)" })).not.toHaveProperty("photoURL");
+    expect(toAuthUser({ uid: "u1", isAnonymous: false, photoURL: "http://example.com/a.png" })).not.toHaveProperty("photoURL");
+  });
+
   it("rejects malformed users", () => {
     expect(toAuthUser(null)).toBeNull();
     expect(toAuthUser({ uid: "", isAnonymous: true })).toBeNull();

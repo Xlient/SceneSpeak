@@ -69,8 +69,7 @@ export const LessonScreen = ({ lesson, initialMode = "typing", onExit, onComplet
   const line = currentLine(scenario, state);
   const backdrop = useBackdrop(lesson);
   const breakdown = useBreakdown(line?.text ?? "", scenario.language, line?.translation ?? "");
-  // A learner line's Spanish is the answer, so its breakdown only unlocks after they've tried.
-  const canExplain = line !== undefined && (line.speaker !== LEARNER_SPEAKER || state.phase === "feedback" || state.phase === "done");
+  const canExplain = line !== undefined;
   const speakerName = (id: string) => scenario.cast.find((member) => member.characterId === id)?.name ?? id;
 
   useEffect(() => {

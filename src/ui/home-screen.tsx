@@ -3,9 +3,9 @@ import type { FeaturedLesson } from "../lesson/featured/featured-lessons";
 import type { LessonMode } from "../lesson/lesson-mode";
 
 const LANGUAGE_NAMES = new Intl.DisplayNames(["en"], { type: "language" });
-const languageName = (code: string) => LANGUAGE_NAMES.of(code) ?? code;
+export const languageName = (code: string) => LANGUAGE_NAMES.of(code) ?? code;
 
-const LessonCard = ({ lesson, onPlay, credit }: { lesson: FeaturedLesson; onPlay: (lesson: FeaturedLesson, mode: LessonMode) => void; credit?: string }) => (
+export const LessonCard = ({ lesson, onPlay, credit }: { lesson: FeaturedLesson; onPlay: (lesson: FeaturedLesson, mode: LessonMode) => void; credit?: string }) => (
   <li className="card lesson-card">
     <span className="lesson-emoji" aria-hidden="true">
       {lesson.emoji}
@@ -32,9 +32,10 @@ export interface HomeScreenProps {
   community: readonly LoadedCommunityLesson[];
   onPlay: (lesson: FeaturedLesson, mode: LessonMode) => void;
   onCreate: () => void;
+  onBrowseCommunity: () => void;
 }
 
-export const HomeScreen = ({ featured, community, onPlay, onCreate }: HomeScreenProps) => (
+export const HomeScreen = ({ featured, community, onPlay, onCreate, onBrowseCommunity }: HomeScreenProps) => (
   <section className="home" aria-labelledby="home-title">
     <div className="card create-card">
       <div>
@@ -54,14 +55,11 @@ export const HomeScreen = ({ featured, community, onPlay, onCreate }: HomeScreen
     </ul>
 
     {community.length > 0 && (
-      <>
-        <h2 className="section-title">Community lessons</h2>
-        <ul className="lesson-grid">
-          {community.map((lesson) => (
-            <LessonCard key={lesson.path} lesson={lesson} onPlay={onPlay} credit={`By ${lesson.authors.join(", ")}`} />
-          ))}
-        </ul>
-      </>
+      <p className="section-more">
+        <button type="button" className="link-button" onClick={onBrowseCommunity}>
+          See {community.length} community {community.length === 1 ? "lesson" : "lessons"} →
+        </button>
+      </p>
     )}
   </section>
 );

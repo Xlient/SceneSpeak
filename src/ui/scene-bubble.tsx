@@ -33,15 +33,16 @@ export const SceneBubble = ({ lessonId, line, speakerName, language, showTransla
 
   return (
     <div className={`scene-bubble ${learner ? "learner" : "character"}`} aria-live="polite">
-      <span className="speaker">{learner ? "Your turn" : speakerName}</span>
-      {learner && !breakdown ? (
-        <p className="line-text">Say: “{line.translation}”</p>
-      ) : (
-        <p className="line-text">
-          <SentenceText text={line.text} language={language} {...(breakdown ? { breakdown } : {})} />
+      <span className="speaker">{learner ? "Your turn · say or type" : speakerName}</span>
+      <p className="line-text">
+        <SentenceText text={line.text} language={language} {...(breakdown ? { breakdown } : {})} />
+      </p>
+      {/* Learners always see what their line means; character lines follow the Show English toggle. */}
+      {(learner || showTranslation) && (
+        <p className="line-translation" lang="en">
+          {line.translation}
         </p>
       )}
-      {(learner ? breakdown !== undefined : showTranslation) && <p className="line-translation">{line.translation}</p>}
       <div className="bubble-actions">
         <SpeakButton
           text={line.text}

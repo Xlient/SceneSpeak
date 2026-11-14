@@ -5,14 +5,25 @@ const FirebaseUserShape = z.object({
   uid: z.string().min(1),
   isAnonymous: z.boolean(),
   displayName: z.string().nullish(),
+  photoURL: z.string().nullish(),
 });
+
+const safePhoto = (value: string | null | undefined): string | undefined => {
+  if (!value) return undefined;
+  try {
+    return new URL(value).protocol === "https:" ? value : undefined;
+  } catch {
+    return undefined;
+  }
+};
 
 export const toAuthUser = (raw: unknown): AuthUser | null => {
   const parsed = FirebaseUserShape.safeParse(raw);
   if (!parsed.success) return null;
-  const { uid, isAnonymous, displayName } = parsed.data;
+  const { uid, isAnonymous, displayName, photoURL } = parsed.data;
   const name = displayName?.trim();
-  return { uid, isAnonymous, ...(name ? { displayName: name } : {}) };
+  const photo = safePhoto(photoURL);
+  return { uid, isAnonymous, ...(name ? { displayName: name } : {}), ...(photo ? { photoURL: photo } : {}) };
 };
 
 const ErrorWithCode = z.object({ code: z.string() });
