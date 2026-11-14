@@ -13,6 +13,8 @@ Spanish only for now. Built for the Firebase **#BuildHybridAI** hackathon.
 | Feature | Status |
 | --- | --- |
 | Featured lessons in 3D scenes: *Meet the neighbour* (workshop), *Ordering at the bakery*, *Coffee at the café* | ✅ Works |
+| Community lessons: anyone can add a lesson as a JSON file; CI validates it and mods review the pull request | ✅ Works |
+| Daily practice streak (stored on your device) | ✅ Works |
 | Accounts: start as an anonymous guest, upgrade to Google without losing your user ID | ✅ Works |
 | Scene composer: a JSON scene recipe (catalog IDs + slots) → laid-out 3D set with no overlaps and auto-framed camera, with a fallback room | ✅ Works |
 | Asset catalog of 25 CC0 props, 3 rooms, 4 characters (toy-like chibis built in code) | ✅ Works |
@@ -118,6 +120,12 @@ Open http://localhost:5173.
 
 Copy `.firebaserc.example` to `.firebaserc` (git-ignored) with your project ID, then use the Firebase CLI to deploy `dist/` to Hosting.
 
+To deploy from GitHub instead, add the secrets and variable listed at the top of `.github/workflows/deploy.yml`. Pull requests then get a preview URL, and pushes to `main` go live.
+
+## Contributing lessons
+
+Lessons in any language are welcome. See [`lessons/README.md`](lessons/README.md) for the format and review process. `pnpm test` validates every lesson, and CI runs it on each pull request.
+
 ## Scripts
 
 | Script | What it does |
@@ -137,6 +145,7 @@ src/
   cache/       Generate-once cache for cloud media (memory or Cache Storage)
   lesson/      Lesson reducer, grader + generator contracts, featured lessons
   monitor/     Model Monitor events and summary
+  progress/    Daily streak (local)
   routing/     On-device vs cloud routing policy
   scene/
     catalog/   Props, rooms, characters the generator may use
@@ -147,6 +156,8 @@ src/
   services/    Wires real or stub AI services into the UI
   ui/          React screens and components
 public/assets/ CC0 glTF models used by the catalog
+lessons/       Community lessons, one JSON file per lesson
+.github/       CI (typecheck, test, build) and Firebase Hosting deploys
 ```
 
 Tests sit next to the code (`foo.ts` + `foo.test.ts`) and never call real AI; fakes are injected.

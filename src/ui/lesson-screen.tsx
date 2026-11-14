@@ -17,6 +17,8 @@ type Attempt = { kind: "text"; reply: string } | { kind: "voice"; audio: Blob };
 export interface LessonScreenProps {
   lesson: PlayableLesson;
   onExit: () => void;
+  /** Called once when the learner reaches the end of the lesson. */
+  onComplete?: () => void;
 }
 
 const useBackdrop = (lesson: PlayableLesson): { url?: string } | undefined => {
@@ -34,11 +36,17 @@ const useBackdrop = (lesson: PlayableLesson): { url?: string } | undefined => {
   return media.status === "ready" ? { url: media.url } : {};
 };
 
-export const LessonScreen = ({ lesson, onExit }: LessonScreenProps) => {
+export const LessonScreen = ({ lesson, onExit, onComplete }: LessonScreenProps) => {
   const { scenario, manifest } = lesson;
   const { grader, voiceGrader } = useServices();
   const reducer = useMemo(() => lessonReducer(scenario), [scenario]);
   const [state, dispatch] = useReducer(reducer, scenario, initialLessonState);
+  const completed = useRef(false);
+  useEffect(() => {
+    if (state.phase !== "done" || completed.current) return;
+    completed.current = true;
+    onComplete?.();
+  }, [state.phase, onComplete]);
   const [reply, setReply] = useState("");
   const [showTranslation, setShowTranslation] = useState(true);
   const [autoPlay, setAutoPlay] = useState(true);

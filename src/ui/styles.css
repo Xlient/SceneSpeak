@@ -801,3 +801,14 @@ button.chip {
   font-weight: 700;
   font-size: 0.9rem;
 }
+
+.lesson-credit {
+  margin: 0;
+  color: var(--ink-soft);
+  font-size: 0.85rem;
+  font-weight: 700;
+}
+
+.streak-pill.lit {
+  background: var(--butter);
+}

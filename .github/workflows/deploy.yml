@@ -1,0 +1,62 @@
+name: Deploy to Firebase Hosting
+
+# Needs, in GitHub → Settings → Secrets and variables → Actions:
+#   secrets:   FIREBASE_SERVICE_ACCOUNT (JSON key with the Firebase Hosting Admin role)
+#              VITE_FIREBASE_API_KEY, VITE_FIREBASE_PROJECT_ID, VITE_FIREBASE_APP_ID,
+#              VITE_FIREBASE_AUTH_DOMAIN, VITE_FIREBASE_STORAGE_BUCKET,
+#              VITE_FIREBASE_MESSAGING_SENDER_ID, VITE_FIREBASE_APPCHECK_SITE_KEY
+#   variables: FIREBASE_HOSTING_SITE (the Hosting site ID behind the "app" target)
+# The App Check debug token is never used here: production builds don't read it.
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+  pull-requests: write
+  checks: write
+
+concurrency:
+  group: deploy-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    # Forks get no secrets, so they only run CI.
+    if: github.event_name == 'push' || github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-latest
+    env:
+      VITE_FIREBASE_API_KEY: ${{ secrets.VITE_FIREBASE_API_KEY }}
+      VITE_FIREBASE_PROJECT_ID: ${{ secrets.VITE_FIREBASE_PROJECT_ID }}
+      VITE_FIREBASE_APP_ID: ${{ secrets.VITE_FIREBASE_APP_ID }}
+      VITE_FIREBASE_AUTH_DOMAIN: ${{ secrets.VITE_FIREBASE_AUTH_DOMAIN }}
+      VITE_FIREBASE_STORAGE_BUCKET: ${{ secrets.VITE_FIREBASE_STORAGE_BUCKET }}
+      VITE_FIREBASE_MESSAGING_SENDER_ID: ${{ secrets.VITE_FIREBASE_MESSAGING_SENDER_ID }}
+      VITE_FIREBASE_APPCHECK_SITE_KEY: ${{ secrets.VITE_FIREBASE_APPCHECK_SITE_KEY }}
+    steps:
+      - uses: actions/checkout@v5
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 25
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm build
+      # .firebaserc is git-ignored, so map the "app" hosting target here.
+      - name: Write .firebaserc
+        run: |
+          printf '{"projects":{"default":"%s"},"targets":{"%s":{"hosting":{"app":["%s"]}}}}' \
+            "$VITE_FIREBASE_PROJECT_ID" "$VITE_FIREBASE_PROJECT_ID" "$SITE" > .firebaserc
+        env:
+          SITE: ${{ vars.FIREBASE_HOSTING_SITE }}
+      - uses: FirebaseExtended/action-hosting-deploy@v0
+        with:
+          repoToken: ${{ secrets.GITHUB_TOKEN }}
+          firebaseServiceAccount: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+          projectId: ${{ secrets.VITE_FIREBASE_PROJECT_ID }}
+          target: app
+          # PRs get a 7-day preview URL; pushes to main go live.
+          channelId: ${{ github.event_name == 'push' && 'live' || '' }}
+          expires: 7d

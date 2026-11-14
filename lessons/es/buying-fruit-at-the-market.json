@@ -1,0 +1,51 @@
+{
+  "authors": ["Xlient"],
+  "emoji": "🍅",
+  "blurb": "Ask for tomatoes and carrots by the kilo and pay.",
+  "scenario": {
+    "id": "buying-fruit-at-the-market",
+    "language": "es",
+    "level": "A1",
+    "title": "Buying vegetables at the market",
+    "setting": "A busy market stall in Cozy Town. Marta, the shopkeeper, stands behind crates of tomatoes and carrots.",
+    "cast": [{ "characterId": "clerk", "role": "shopkeeper", "name": "Marta" }],
+    "goals": [
+      { "id": "ask-item", "description": "Ask for a kilo of tomatoes" },
+      { "id": "add-item", "description": "Add some carrots" },
+      { "id": "pay", "description": "Ask how much it is and say thanks" }
+    ],
+    "vocab": [
+      { "word": "¿qué le pongo?", "meaning": "what can I get you? (polite)" },
+      { "word": "un kilo de…", "meaning": "a kilo of…" },
+      { "word": "los tomates", "meaning": "tomatoes" },
+      { "word": "las zanahorias", "meaning": "carrots" },
+      { "word": "también", "meaning": "also" },
+      { "word": "¿cuánto es?", "meaning": "how much is it?" }
+    ],
+    "lines": [
+      { "id": "l1", "speaker": "clerk", "text": "¡Buenos días! ¿Qué le pongo?", "translation": "Good morning! What can I get you?", "animation": "wave", "expects": null },
+      { "id": "l2", "speaker": "learner", "text": "Un kilo de tomates, por favor.", "translation": "A kilo of tomatoes, please.", "animation": "idle", "expects": "ask-item" },
+      { "id": "l3", "speaker": "clerk", "text": "Aquí tiene. ¿Algo más?", "translation": "Here you go. Anything else?", "animation": "nod", "expects": null },
+      { "id": "l4", "speaker": "learner", "text": "Sí, también unas zanahorias.", "translation": "Yes, some carrots too.", "animation": "idle", "expects": "add-item" },
+      { "id": "l5", "speaker": "clerk", "text": "Muy bien. ¿Algo más?", "translation": "Very good. Anything else?", "animation": "point", "expects": null },
+      { "id": "l6", "speaker": "learner", "text": "No, gracias. ¿Cuánto es?", "translation": "No, thanks. How much is it?", "animation": "idle", "expects": "pay" },
+      { "id": "l7", "speaker": "clerk", "text": "Son tres euros. ¡Gracias!", "translation": "That's three euros. Thank you!", "animation": "talk", "expects": null }
+    ]
+  },
+  "recipe": {
+    "room": "shop-counter",
+    "character": "clerk",
+    "props": [
+      { "item": "counter", "slot": "counter" },
+      { "item": "counter", "slot": "counter" },
+      { "item": "bowl", "slot": "counter-top" },
+      { "item": "jar", "slot": "counter-top" },
+      { "item": "crate-tomatoes", "slot": "back" },
+      { "item": "crate-carrots", "slot": "back" },
+      { "item": "crate-cheese", "slot": "back" },
+      { "item": "crate-tomatoes", "slot": "floor-left" },
+      { "item": "crate-carrots", "slot": "floor-right" }
+    ],
+    "poses": []
+  }
+}

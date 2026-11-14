@@ -1,11 +1,19 @@
 import { type FormEvent, useEffect, useRef, useState } from "react";
 import { type GenerationStep, LESSON_PROMPT_MAX, checkLessonPrompt } from "../lesson/generator";
 import { type PlayableLesson, buildPlayableLesson } from "../lesson/playable-lesson";
+import { CATALOG } from "../scene/catalog/catalog";
+import { catalogAssetUrls, prefetchUrls } from "../scene/catalog/preload";
 import { useServices } from "./services-context";
 
 const EXAMPLES = ["Opening a bank account", "Asking a neighbour to borrow a ladder", "Checking in at a hotel", "Buying fruit at the market"];
 
 type StepId = GenerationStep | "build";
+
+// While the learner types their request, fetch the 3D code and models so the generated scene opens without waiting on them.
+const warmScene = () => {
+  void import("../scene/scene-view");
+  prefetchUrls(catalogAssetUrls(CATALOG));
+};
 
 const STEPS: readonly { id: StepId; label: string; where: "device" | "cloud" | "local" }[] = [
   { id: "device-check", label: "Checking your request privately", where: "device" },
@@ -30,6 +38,7 @@ export const CreateLessonScreen = ({ onReady, onCancel }: CreateLessonScreenProp
   const controller = useRef<AbortController | null>(null);
 
   useEffect(() => () => controller.current?.abort(), []);
+  useEffect(warmScene, []);
 
   const submit = async (event: FormEvent) => {
     event.preventDefault();

@@ -1,0 +1,3 @@
+# Lesson mods: a lesson PR needs approval from one of these before it can merge.
+# Add mods here (GitHub usernames or a team like @org/lesson-mods).
+/lessons/ @Xlient

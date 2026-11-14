@@ -1,7 +1,9 @@
 import type { MaterialSettings, Vec3 } from "../scene-manifest";
 import type { PropItem, SlotKind } from "./catalog-types";
 
-const KAYKIT_DIR = "/assets/kaykit-restaurant";
+export const KAYKIT_DIR = "/assets/kaykit-restaurant";
+// Every KayKit glTF points at this shared atlas.
+export const KAYKIT_TEXTURE = `${KAYKIT_DIR}/restaurantbits_texture.png`;
 const FURNITURE = 0.55;
 const CRATE = 0.35;
 
