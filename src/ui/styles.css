@@ -774,3 +774,30 @@ button.chip {
     transition: none;
   }
 }
+
+/* Account */
+
+.account {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.account-pill {
+  max-width: 14rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.account-error:empty {
+  display: none;
+}
+
+.account-error {
+  flex-basis: 100%;
+  color: #a33a46;
+  font-weight: 700;
+  font-size: 0.9rem;
+}

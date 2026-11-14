@@ -12,7 +12,8 @@ Spanish only for now. Built for the Firebase **#BuildHybridAI** hackathon.
 
 | Feature | Status |
 | --- | --- |
-| Featured lessons in 3D scenes: *Meet the neighbour* (workshop), *Ordering at the bakery* | ✅ Works |
+| Featured lessons in 3D scenes: *Meet the neighbour* (workshop), *Ordering at the bakery*, *Coffee at the café* | ✅ Works |
+| Accounts: start as an anonymous guest, upgrade to Google without losing your user ID | ✅ Works |
 | Scene composer: a JSON scene recipe (catalog IDs + slots) → laid-out 3D set with no overlaps and auto-framed camera, with a fallback room | ✅ Works |
 | Asset catalog of 25 CC0 props, 3 rooms, 4 characters (toy-like chibis built in code) | ✅ Works |
 | Reply grading on device with Gemini Nano (cloud fallback), with an "on device / cloud" badge | 🚧 In progress |
@@ -85,7 +86,11 @@ Requires Node 25 and pnpm 12 (`npx -y pnpm@12.15.0 <command>` works if pnpm isn'
 1. In **App Check**, register the web app with **reCAPTCHA Enterprise** and copy the site key.
 2. For local development, add a **debug token** under App Check → Apps → ⋮ → Manage debug tokens. If you leave the token empty in `.env.local`, the dev build prints a new one in the browser console for you to register.
 
-### 3. Environment
+### 3. Authentication
+
+In **Authentication → Sign-in method**, enable **Anonymous** and **Google**. Everyone starts as a guest; "Sign in with Google" links the guest to a Google account. If Anonymous is off, the app just offers Google sign-in.
+
+### 4. Environment
 
 ```bash
 cp .env.example .env.local
@@ -93,7 +98,7 @@ cp .env.example .env.local
 
 Fill in the `VITE_FIREBASE_*` values, the App Check site key and (for development) the debug token. `.env.local` is git-ignored.
 
-### 4. Run
+### 5. Run
 
 ```bash
 pnpm install
@@ -102,7 +107,7 @@ pnpm dev
 
 Open http://localhost:5173.
 
-### 5. On-device model (Gemini Nano)
+### 6. On-device model (Gemini Nano)
 
 - Desktop Chrome 139 or later.
 - Enable `chrome://flags/#prompt-api-for-gemini-nano-multimodal-input`, then restart Chrome.
@@ -127,6 +132,7 @@ Copy `.firebaserc.example` to `.firebaserc` (git-ignored) with your project ID, 
 ```
 src/
   ai/          Firebase setup: env validation, App Check, AI Logic client
+  auth/        Firebase Auth client (anonymous guest → Google), account view model
   audio/       Media interfaces (TTS, backdrop painter, voice), push-to-talk recorder
   cache/       Generate-once cache for cloud media (memory or Cache Storage)
   lesson/      Lesson reducer, grader + generator contracts, featured lessons
@@ -149,7 +155,7 @@ Tests sit next to the code (`foo.ts` + `foo.test.ts`) and never call real AI; fa
 
 - Typed replies are graded on your device when Gemini Nano is available.
 - Voice replies are opt-in, labelled as cloud, sent to the model call only, and never stored or logged.
-- No accounts, analytics or tracking.
+- No analytics or tracking. Accounts are optional: guests are anonymous, and Google sign-in only stores your uid and display name in Firebase Auth.
 
 ## Credits
 
