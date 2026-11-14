@@ -24,7 +24,7 @@ export interface LessonScreenProps {
   initialMode?: LessonMode;
   onExit: () => void;
   /** Called once when the learner reaches the end of the lesson. */
-  onComplete?: () => void;
+  onComplete?: (result: { lessonId: string; goalsDone: number; goalsTotal: number; speaking: boolean }) => void;
 }
 
 const useBackdrop = (lesson: PlayableLesson): { url?: string } | undefined => {
@@ -47,12 +47,6 @@ export const LessonScreen = ({ lesson, initialMode = "typing", onExit, onComplet
   const { grader, voiceGrader, speechConnected } = useServices();
   const reducer = useMemo(() => lessonReducer(scenario), [scenario]);
   const [state, dispatch] = useReducer(reducer, scenario, initialLessonState);
-  const completed = useRef(false);
-  useEffect(() => {
-    if (state.phase !== "done" || completed.current) return;
-    completed.current = true;
-    onComplete?.();
-  }, [state.phase, onComplete]);
   const [reply, setReply] = useState("");
   const [mode, setMode] = useState<LessonMode>(initialMode);
   const settings = MODE_SETTINGS[mode];
@@ -60,6 +54,12 @@ export const LessonScreen = ({ lesson, initialMode = "typing", onExit, onComplet
   const [autoPlay, setAutoPlay] = useState(settings.autoPlay);
   const [useVoice, setUseVoice] = useState(false);
   const voiceFirst = settings.voiceFirst;
+  const completed = useRef(false);
+  useEffect(() => {
+    if (state.phase !== "done" || completed.current) return;
+    completed.current = true;
+    onComplete?.({ lessonId: scenario.id, goalsDone: state.completedGoalIds.length, goalsTotal: scenario.goals.length, speaking: mode === "speaking" });
+  }, [state.phase, onComplete, scenario, state.completedGoalIds, mode]);
   const changeMode = (next: LessonMode) => {
     setMode(next);
     setShowTranslation(MODE_SETTINGS[next].showTranslation);

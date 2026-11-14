@@ -1,7 +1,7 @@
 import type { InferenceSource } from "../lesson/grader";
 import { NotConnectedError } from "../services/not-connected";
 
-export const AI_TASKS = ["grade", "grade-voice", "generate", "paint", "speak", "explain"] as const;
+export const AI_TASKS = ["grade", "grade-voice", "generate", "paint", "speak", "explain", "coach"] as const;
 export type AiTask = (typeof AI_TASKS)[number];
 
 export interface ModelEvent {

@@ -20,6 +20,9 @@ import { useAuth } from "./use-auth";
 import { useDeviceModel } from "./use-device-model";
 import { usePractice } from "./use-practice";
 
+const ALL_LESSONS: readonly FeaturedLesson[] = [...FEATURED_LESSONS, ...COMMUNITY_LESSONS];
+const COACH_LESSONS = ALL_LESSONS.map((l) => ({ id: l.scenario.id, title: l.scenario.title, level: l.scenario.level }));
+
 type Screen = { kind: "page"; page: Page } | { kind: "create" } | { kind: "lesson"; lesson: PlayableLesson; mode: LessonMode };
 
 /** `auth: null` turns accounts off; omitted, it uses Firebase Auth when configured. */
@@ -43,6 +46,10 @@ const Shell = ({ authClient }: { authClient: AuthClient | null }) => {
   const go = (page: Page) => setScreen({ kind: "page", page });
   const play = (featured: FeaturedLesson, mode: LessonMode) =>
     setScreen({ kind: "lesson", lesson: buildPlayableLesson(featured.scenario, featured.recipe), mode });
+  const playById = (lessonId: string) => {
+    const found = ALL_LESSONS.find((l) => l.scenario.id === lessonId);
+    if (found) play(found, "typing");
+  };
 
   return (
     <>
@@ -85,6 +92,11 @@ const Shell = ({ authClient }: { authClient: AuthClient | null }) => {
                 streak={practice.streak}
                 best={practice.best}
                 lessonsDone={practice.lessonsDone}
+                week={practice.week}
+                summary={practice.summary}
+                language="es"
+                lessons={COACH_LESSONS}
+                onPlayLesson={playById}
                 onSignIn={session.enabled ? session.signInWithGoogle : undefined}
               />
             )}

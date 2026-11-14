@@ -9,7 +9,7 @@ describe("dayKey", () => {
 
 describe("recordLesson", () => {
   it("starts a streak on the first lesson", () => {
-    expect(recordLesson(EMPTY_PRACTICE, "2026-11-14")).toEqual({ lastDay: "2026-11-14", streak: 1, best: 1, lessonsDone: 1 });
+    expect(recordLesson(EMPTY_PRACTICE, "2026-11-14")).toMatchObject({ lastDay: "2026-11-14", streak: 1, best: 1, lessonsDone: 1 });
   });
 
   it("keeps the streak for a second lesson on the same day", () => {
@@ -28,6 +28,20 @@ describe("recordLesson", () => {
   });
 });
 
+describe("history", () => {
+  const lesson = (id: string, speaking = false) => ({ lessonId: id, goalsDone: 2, goalsTotal: 3, speaking });
+
+  it("adds up lessons, goals and speaking lessons per day", () => {
+    const day = recordLesson(recordLesson(EMPTY_PRACTICE, "2026-11-14", lesson("cafe")), "2026-11-14", lesson("bakery", true));
+    expect(day.history).toEqual([{ day: "2026-11-14", lessons: 2, goalsDone: 4, goalsTotal: 6, speaking: 1, lessonIds: ["cafe", "bakery"] }]);
+  });
+
+  it("forgets days older than four weeks", () => {
+    const old = recordLesson(EMPTY_PRACTICE, "2026-10-01", lesson("a"));
+    expect(recordLesson(old, "2026-11-14", lesson("b")).history.map((d) => d.day)).toEqual(["2026-11-14"]);
+  });
+});
+
 describe("activeStreak", () => {
   const practice = recordLesson(EMPTY_PRACTICE, "2026-11-14");
 
@@ -41,6 +55,17 @@ describe("activeStreak", () => {
 describe("parsePractice", () => {
   it("falls back to empty for garbage and repairs bad fields", () => {
     expect(parsePractice("nope")).toEqual(EMPTY_PRACTICE);
-    expect(parsePractice({ lastDay: "yesterday", streak: -3, best: 2, lessonsDone: 1.5 })).toEqual({ lastDay: null, streak: 0, best: 2, lessonsDone: 0 });
+    expect(parsePractice({ lastDay: "yesterday", streak: -3, best: 2, lessonsDone: 1.5 })).toEqual({ lastDay: null, streak: 0, best: 2, lessonsDone: 0, history: [] });
+  });
+
+  it("keeps valid history days, sorted, and drops broken ones", () => {
+    const parsed = parsePractice({
+      lastDay: "2026-11-14",
+      streak: 1,
+      best: 1,
+      lessonsDone: 1,
+      history: [{ day: "2026-11-14", lessons: 1, goalsDone: 2, goalsTotal: 3, speaking: 0, lessonIds: ["a"] }, { day: "nope" }, { day: "2026-11-01", lessons: 1 }],
+    });
+    expect(parsed.history.map((d) => d.day)).toEqual(["2026-11-01", "2026-11-14"]);
   });
 });
