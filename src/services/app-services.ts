@@ -9,6 +9,7 @@ import { type Grader, unavailableGrader } from "../lesson/grader";
 import { type VoiceGrader, unavailableVoiceGrader } from "../lesson/voice-grader";
 import { type DeviceStatusStore, createDeviceStatusStore } from "./device-status-store";
 import { createLiveGrader } from "./live-grader";
+import { createLiveVoiceGrader } from "./live-voice-grader";
 import { type ModelMonitor, createModelMonitor, monitored } from "../monitor/model-monitor";
 
 export interface DeviceSetup {
@@ -67,6 +68,7 @@ export const createLiveServices = (): RawServices => {
     ...STUB_SERVICES,
     deviceSetup,
     grader: createLiveGrader({ deviceStatus: deviceSetup.status.get }),
+    voiceGrader: createLiveVoiceGrader(),
   };
 };
 

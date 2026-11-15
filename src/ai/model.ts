@@ -27,9 +27,14 @@ export type ModelPort = Pick<GenerativeModel, "generateContent" | "initializeDev
 export type ModelFactory = (params: HybridParams) => ModelPort;
 
 
+/** A prompt as text, or text plus inline media parts (e.g. a voice recording). */
+export type ModelRequest = Parameters<ModelPort["generateContent"]>[0];
+
 export interface AppModel {
   mode: InferenceMode;
   generateText(prompt: string, options?: CallOptions): Promise<TextResult>;
+  /** Like `generateText`, for prompts that carry media. */
+  generate(request: ModelRequest, options?: CallOptions): Promise<TextResult>;
 }
 export const firebaseFactory: ModelFactory = (params) =>
   getGenerativeModel(getAI(getFirebaseApp(), { backend: new GoogleAIBackend() }), params);
@@ -58,16 +63,14 @@ export const createModel =  (mode: InferenceMode, options: CreateModelOptions = 
     {
         const params = buildHybridParams(mode, options);
         const modelPort = factory(params);
-        return {
-            mode: mode,
-            async generateText(prompt: string, callOptions: CallOptions = {}): Promise<TextResult> {
-                const timeoutMs = callOptions.timeoutMs ?? options.timeoutMs ?? DEFAULT_TIMEOUT_MS;
-                const result = await withTimeout(
-                    (signal) => modelPort.generateContent(prompt, { signal, timeout: timeoutMs }),
-                { timeoutMs, signal: callOptions.signal });
-                return { text: result.response.text(), source: result.response.inferenceSource };
-            },
+        const generate = async (request: ModelRequest, callOptions: CallOptions = {}): Promise<TextResult> => {
+            const timeoutMs = callOptions.timeoutMs ?? options.timeoutMs ?? DEFAULT_TIMEOUT_MS;
+            const result = await withTimeout(
+                (signal) => modelPort.generateContent(request, { signal, timeout: timeoutMs }),
+            { timeoutMs, signal: callOptions.signal });
+            return { text: result.response.text(), source: result.response.inferenceSource };
         };
+        return { mode, generate, generateText: generate };
     
     
 
