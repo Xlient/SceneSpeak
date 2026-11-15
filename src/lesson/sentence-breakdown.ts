@@ -60,6 +60,8 @@ export interface ExplainRequest {
 export interface ExplainResult {
   breakdown: SentenceBreakdown;
   source: InferenceSource;
+  /** Why it ran where it did, for the Model Monitor. */
+  route?: string;
 }
 
 /** Breaks a line into words with their grammar role. Meant for the on-device model: small, frequent, free. */
