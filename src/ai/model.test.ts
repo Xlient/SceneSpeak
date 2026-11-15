@@ -4,6 +4,7 @@ import {
   DEFAULT_CLOUD_MODEL,
   DEFAULT_TIMEOUT_MS,
   type ModelPort,
+  type ModelRequest,
   buildHybridParams,
   createModel,
 } from "./model";
@@ -96,6 +97,13 @@ describe("createModel", () => {
   it("returns the text and where it ran", async () => {
     const model = createModel(InferenceMode.PREFER_ON_DEVICE, {}, () => fakePort());
     await expect(model.generateText("Hola")).resolves.toEqual({ text: "hola", source: "on_device" });
+  });
+
+  it("passes media parts through unchanged", async () => {
+    const port = fakePort();
+    const parts: ModelRequest = ["Grade this", { type: "inlineData", inlineData: { mimeType: "audio/wav", data: "AAAA" } }];
+    await createModel(InferenceMode.ONLY_IN_CLOUD, {}, () => port).generate(parts);
+    expect(port.generateContent).toHaveBeenCalledWith(parts, expect.objectContaining({ signal: expect.any(AbortSignal) }));
   });
 
   it("reports an unknown source when the SDK doesn't say", async () => {
