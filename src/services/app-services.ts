@@ -9,6 +9,7 @@ import { type Grader, unavailableGrader } from "../lesson/grader";
 import { type VoiceGrader, unavailableVoiceGrader } from "../lesson/voice-grader";
 import { type DeviceStatusStore, createDeviceStatusStore } from "./device-status-store";
 import { createLiveGrader } from "./live-grader";
+import { createLiveCoach, createLiveExplainer } from "./live-helpers";
 import { type ModelMonitor, createModelMonitor, monitored } from "../monitor/model-monitor";
 
 export interface DeviceSetup {
@@ -67,6 +68,8 @@ export const createLiveServices = (): RawServices => {
     ...STUB_SERVICES,
     deviceSetup,
     grader: createLiveGrader({ deviceStatus: deviceSetup.status.get }),
+    explainer: createLiveExplainer({ deviceStatus: deviceSetup.status.get }),
+    coach: createLiveCoach({ deviceStatus: deviceSetup.status.get }),
   };
 };
 
@@ -90,8 +93,8 @@ export const createAppServices = (raw: RawServices = STUB_SERVICES, stores: Serv
     grader: monitored(monitor, "grade", raw.grader, (r) => r.source, "on_device", { routeOf: (r) => r.route }),
     voiceGrader: monitored(monitor, "grade-voice", raw.voiceGrader, (r) => r.source, "in_cloud", { routeOf: (r) => r.route }),
     generator: monitored(monitor, "generate", raw.generator, () => "in_cloud", "in_cloud"),
-    explainer: monitored(monitor, "explain", raw.explainer, (r) => r.source, "on_device"),
-    coach: monitored(monitor, "coach", raw.coach, (r) => r.source, "on_device"),
+    explainer: monitored(monitor, "explain", raw.explainer, (r) => r.source, "on_device", { routeOf: (r) => r.route }),
+    coach: monitored(monitor, "coach", raw.coach, (r) => r.source, "on_device", { routeOf: (r) => r.route }),
     speech: cachedBlobSource(monitored(monitor, "speak", raw.speech, () => "in_cloud", "in_cloud"), stores.speech),
     backdrops: cachedBlobSource(monitored(monitor, "paint", raw.backdrops, () => "in_cloud", "in_cloud"), stores.backdrops),
   };

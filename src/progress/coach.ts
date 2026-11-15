@@ -29,6 +29,8 @@ export type CoachNote = z.infer<typeof CoachNote>;
 export interface CoachResult {
   note: CoachNote;
   source: InferenceSource;
+  /** Why it ran where it did, for the Model Monitor. */
+  route?: string;
 }
 
 /** Writes the weekly recap from local stats. Meant to run only on device, so practice habits stay private. */

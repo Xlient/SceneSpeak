@@ -23,6 +23,11 @@ describe("routeAiCall", () => {
     expect(routeAiCall(grade({ task }))).toMatchObject({ mode: "only_in_cloud", rule: "capability" });
   });
 
+  it("keeps the coach on the device whatever the device state or language", () => {
+    expect(routeAiCall(grade({ task: "coach" }))).toMatchObject({ mode: "only_on_device", rule: "private" });
+    expect(routeAiCall(grade({ task: "coach", device: "unavailable", language: "fr", online: false }))).toMatchObject({ mode: "only_on_device" });
+  });
+
   it("sends languages Nano doesn't support to the cloud", () => {
     expect(routeAiCall(grade({ language: "fr" }))).toMatchObject({ mode: "only_in_cloud", rule: "language" });
   });

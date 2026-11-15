@@ -16,7 +16,7 @@ export interface RouteInput {
   inputChars?: number;
 }
 
-export type RouteRule = "capability" | "language" | "offline" | "long-input" | "device-busy" | "device-missing" | "on-device";
+export type RouteRule = "private" | "capability" | "language" | "offline" | "long-input" | "device-busy" | "device-missing" | "on-device";
 
 export interface RouteDecision {
   mode: InferenceMode;
@@ -31,10 +31,18 @@ const CLOUD_ONLY_TASKS: Partial<Record<AiTask, string>> = {
   generate: "long structured lessons need the larger cloud model",
 };
 
+/** Tasks whose input is personal: they run on the device or not at all. */
+const DEVICE_ONLY_TASKS: Partial<Record<AiTask, string>> = {
+  coach: "practice stats stay private",
+};
+
 const baseLanguage = (language: string) => language.split("-")[0]?.toLowerCase() ?? language;
 
-/** First matching rule wins; order is capability → language → connectivity → size → device state. */
+/** First matching rule wins; order is privacy → capability → language → connectivity → size → device state. */
 export const routeAiCall = (input: RouteInput): RouteDecision => {
+  const deviceOnly = DEVICE_ONLY_TASKS[input.task];
+  if (deviceOnly) return { mode: InferenceMode.ONLY_ON_DEVICE, rule: "private", reason: `Device only: ${deviceOnly}` };
+
   const cloudOnly = CLOUD_ONLY_TASKS[input.task];
   if (cloudOnly) return { mode: InferenceMode.ONLY_IN_CLOUD, rule: "capability", reason: `Cloud: ${cloudOnly}` };
 
