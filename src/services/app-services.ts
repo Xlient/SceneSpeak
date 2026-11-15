@@ -8,6 +8,7 @@ import { type PracticeCoach, unavailableCoach } from "../progress/coach";
 import { type Grader, unavailableGrader } from "../lesson/grader";
 import { type VoiceGrader, unavailableVoiceGrader } from "../lesson/voice-grader";
 import { type DeviceStatusStore, createDeviceStatusStore } from "./device-status-store";
+import { createLiveGenerator } from "./live-generator";
 import { createLiveGrader } from "./live-grader";
 import { createLiveVoiceGrader } from "./live-voice-grader";
 import { createLiveCoach, createLiveExplainer } from "./live-helpers";
@@ -72,6 +73,7 @@ export const createLiveServices = (): RawServices => {
     voiceGrader: createLiveVoiceGrader(),
     explainer: createLiveExplainer({ deviceStatus: deviceSetup.status.get }),
     coach: createLiveCoach({ deviceStatus: deviceSetup.status.get }),
+    generator: createLiveGenerator({ deviceStatus: deviceSetup.status.get }),
   };
 };
 

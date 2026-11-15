@@ -53,6 +53,10 @@ export const buildHybridParams = (mode: InferenceMode, options: CreateModelOptio
       createOptions: {
         expectedInputs: [{ type: "text", languages }],
         expectedOutputs: [{ type: "text", languages }],
+        // The SDK only sends systemInstruction to the cloud; Nano needs it as a system prompt.
+        ...(options.systemInstruction
+          ? { initialPrompts: [{ role: "system", content: [{ type: "text", value: options.systemInstruction }] }] }
+          : {}),
       },
       ...(schema ? { promptOptions: { responseConstraint: schema } } : {}),
     },
