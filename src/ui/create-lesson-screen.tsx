@@ -3,6 +3,7 @@ import { type GenerationStep, LESSON_PROMPT_MAX, checkLessonPrompt } from "../le
 import { type PlayableLesson, buildPlayableLesson } from "../lesson/playable-lesson";
 import { CATALOG } from "../scene/catalog/catalog";
 import { catalogAssetUrls, prefetchUrls } from "../scene/catalog/preload";
+import { generateErrorMessage } from "./generate-error-message";
 import { useServices } from "./services-context";
 
 const EXAMPLES = ["Opening a bank account", "Asking a neighbour to borrow a ladder", "Checking in at a hotel", "Buying fruit at the market"];
@@ -71,7 +72,7 @@ export const CreateLessonScreen = ({ onReady, onCancel }: CreateLessonScreenProp
       onReady({ ...buildPlayableLesson(generated.scenario, generated.recipe), backdrop: {} });
     } catch (error) {
       if (current.signal.aborted) return;
-      setStatus({ kind: "failed", step, message: error instanceof Error ? error.message : "Something went wrong." });
+      setStatus({ kind: "failed", step, message: generateErrorMessage(error) });
     }
   };
 

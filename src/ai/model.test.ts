@@ -77,6 +77,17 @@ describe("buildHybridParams", () => {
     expect(params.inCloudParams).not.toHaveProperty("generationConfig");
     expect(params.onDeviceParams).not.toHaveProperty("promptOptions");
   });
+
+  it("gives Nano the system instruction as a system prompt", () => {
+    const createOptions = buildHybridParams(InferenceMode.PREFER_ON_DEVICE, { systemInstruction: "Grade kindly." }).onDeviceParams
+      ?.createOptions;
+    expect(createOptions?.initialPrompts).toEqual([{ role: "system", content: [{ type: "text", value: "Grade kindly." }] }]);
+  });
+
+  it("skips the system prompt when there's no instruction", () => {
+    const createOptions = buildHybridParams(InferenceMode.PREFER_ON_DEVICE).onDeviceParams?.createOptions;
+    expect(createOptions).not.toHaveProperty("initialPrompts");
+  });
 });
 
 describe("createModel", () => {

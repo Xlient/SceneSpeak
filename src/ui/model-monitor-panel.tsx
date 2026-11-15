@@ -6,6 +6,7 @@ import { useServices } from "./services-context";
 const TASK_LABEL: Record<ModelEvent["task"], string> = {
   grade: "Grade reply",
   "grade-voice": "Grade voice",
+  screen: "Check request",
   generate: "Write lesson",
   paint: "Paint backdrop",
   speak: "Character voice",

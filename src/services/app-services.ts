@@ -7,6 +7,7 @@ import { type SentenceExplainer, unavailableExplainer } from "../lesson/sentence
 import { type Grader, unavailableGrader } from "../lesson/grader";
 import { type VoiceGrader, unavailableVoiceGrader } from "../lesson/voice-grader";
 import { type DeviceStatusStore, createDeviceStatusStore } from "./device-status-store";
+import { createLiveGenerator } from "./live-generator";
 import { createLiveGrader } from "./live-grader";
 import { type ModelMonitor, createModelMonitor, monitored } from "../monitor/model-monitor";
 
@@ -63,6 +64,7 @@ export const createLiveServices = (): RawServices => {
     ...STUB_SERVICES,
     deviceSetup,
     grader: createLiveGrader({ deviceStatus: deviceSetup.status.get }),
+    generator: createLiveGenerator({ deviceStatus: deviceSetup.status.get }),
   };
 };
 
