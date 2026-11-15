@@ -25,6 +25,7 @@ export const usePractice = (store?: PracticeStore) => {
     lessonsDone: practice.lessonsDone,
     week: weekStrip(practice, today),
     summary: weeklySummary(practice, today),
+    practisedDays: practice.history.filter((d) => d.lessons > 0).map((d) => d.day),
     finishLesson,
   };
 };

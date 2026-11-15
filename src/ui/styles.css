@@ -1570,3 +1570,56 @@ button.chip {
 .coach-tip {
   margin: 0 0 0.6rem;
 }
+
+/* Weekly board */
+
+.board-card {
+  display: grid;
+  gap: 0.5rem;
+  align-content: start;
+}
+
+.board-card p {
+  margin: 0;
+}
+
+.board-list {
+  display: grid;
+  gap: 0.3rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.board-list li {
+  display: grid;
+  grid-template-columns: 2rem 1fr auto;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.35rem 0.6rem;
+  border: 2px solid var(--ink);
+  border-radius: var(--radius-small);
+  background: var(--paper);
+}
+
+.board-list li.me {
+  background: var(--butter);
+}
+
+.board-rank {
+  font-family: var(--font-display);
+  font-weight: 700;
+}
+
+.board-name {
+  font-weight: 800;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.board-days {
+  color: var(--ink-soft);
+  font-size: 0.9rem;
+  font-weight: 700;
+}

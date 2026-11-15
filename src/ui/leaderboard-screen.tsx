@@ -1,7 +1,9 @@
 import type { AuthStatus } from "../auth/auth-state";
 import type { CoachLessonOption } from "../progress/coach";
 import type { WeekDay, WeeklySummary } from "../progress/weekly";
+import type { BoardStore } from "../leaderboard/board";
 import { Avatar } from "./avatar";
+import { BoardCard } from "./board-card";
 import { CoachCard } from "./coach-card";
 import { WeekStrip } from "./week-strip";
 
@@ -14,11 +16,13 @@ export interface LeaderboardScreenProps {
   summary: WeeklySummary;
   language: string;
   lessons: readonly CoachLessonOption[];
+  board: BoardStore;
+  practisedDays: readonly string[];
   onPlayLesson: (lessonId: string) => void;
   onSignIn?: (() => void) | undefined;
 }
 
-export const LeaderboardScreen = ({ auth, streak, best, lessonsDone, week, summary, language, lessons, onPlayLesson, onSignIn }: LeaderboardScreenProps) => {
+export const LeaderboardScreen = ({ auth, streak, best, lessonsDone, week, summary, language, lessons, board, practisedDays, onPlayLesson, onSignIn }: LeaderboardScreenProps) => {
   const name = auth.kind === "member" ? (auth.user.displayName ?? "You") : "You";
   return (
     <section className="page" aria-labelledby="leaderboard-title">
@@ -53,15 +57,7 @@ export const LeaderboardScreen = ({ auth, streak, best, lessonsDone, week, summa
       <div className="page-columns">
         <CoachCard summary={summary} language={language} lessons={lessons} onPlay={onPlayLesson} />
 
-        <section className="card page-card" aria-labelledby="weekly-title">
-          <h3 id="weekly-title">Friends this week</h3>
-          <p>Weekly leaderboards with friends are coming soon. They'll rank by days practised, not speed, so everyone can keep up. Only your name and days practised will be shared.</p>
-          {auth.kind !== "member" && onSignIn && (
-            <button type="button" onClick={onSignIn}>
-              Sign in with Google to join
-            </button>
-          )}
-        </section>
+        <BoardCard store={board} auth={auth} practisedDays={practisedDays} onSignIn={onSignIn} />
       </div>
     </section>
   );

@@ -4,6 +4,7 @@ import { createDefaultAuth } from "../auth/default-auth";
 import { COMMUNITY_LESSONS } from "../lesson/community/community-lessons";
 import { FEATURED_LESSONS, type FeaturedLesson } from "../lesson/featured/featured-lessons";
 import type { LessonMode } from "../lesson/lesson-mode";
+import { createDefaultBoard } from "../leaderboard/default-board";
 import { type PlayableLesson, buildPlayableLesson } from "../lesson/playable-lesson";
 import { type AppServices, createAppServices, createLiveServices } from "../services/app-services";
 import { AccountMenu } from "./account-menu";
@@ -41,6 +42,7 @@ const Shell = ({ authClient }: { authClient: AuthClient | null }) => {
   const session = useAuth(authClient);
   const device = useDeviceModel();
   const practice = usePractice();
+  const board = useMemo(createDefaultBoard, []);
   const [screen, setScreen] = useState<Screen>({ kind: "page", page: "lessons" });
   const [monitorOpen, setMonitorOpen] = useState(false);
   const go = (page: Page) => setScreen({ kind: "page", page });
@@ -96,6 +98,8 @@ const Shell = ({ authClient }: { authClient: AuthClient | null }) => {
                 summary={practice.summary}
                 language="es"
                 lessons={COACH_LESSONS}
+                board={board}
+                practisedDays={practice.practisedDays}
                 onPlayLesson={playById}
                 onSignIn={session.enabled ? session.signInWithGoogle : undefined}
               />

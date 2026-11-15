@@ -92,6 +92,10 @@ Requires Node 25 and pnpm 12 (`npx -y pnpm@12.15.0 <command>` works if pnpm isn'
 
 In **Authentication → Sign-in method**, enable **Anonymous** and **Google**. Everyone starts as a guest; "Sign in with Google" links the guest to a Google account. If Anonymous is off, the app just offers Google sign-in.
 
+### Leaderboard (optional)
+
+Create a **Firestore** database, then deploy the rules: `pnpm exec firebase deploy --only firestore`. The app stores one thing there: the weekly board (`weeks/{week}/board/{uid}` with a first name and days practised). Without Firestore the Leaderboard page just shows your local stats.
+
 ### 4. Environment
 
 ```bash
@@ -134,6 +138,7 @@ Lessons in any language are welcome. See [`lessons/README.md`](lessons/README.md
 | `pnpm build` | Typecheck, then build to `dist/` |
 | `pnpm typecheck` | `tsc --noEmit` |
 | `pnpm test` | Run the Vitest suite once |
+| `pnpm test:rules` | Test `firestore.rules` against the Firestore emulator (needs Java 21+) |
 
 ## Project structure
 
@@ -166,6 +171,7 @@ Tests sit next to the code (`foo.ts` + `foo.test.ts`) and never call real AI; fa
 
 - Typed replies are graded on your device when Gemini Nano is available.
 - Voice replies are opt-in, labelled as cloud, sent to the model call only, and never stored or logged.
+- The weekly leaderboard is opt-in. If you join, only a first name and your days practised this week are stored in Firestore; practice history stays on your device.
 - No analytics or tracking. Accounts are optional: guests are anonymous, and Google sign-in only stores your uid and display name in Firebase Auth.
 
 ## Credits
