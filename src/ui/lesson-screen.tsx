@@ -3,9 +3,11 @@ import { backdropCacheKey } from "../cache/blob-cache";
 import { LESSON_MODES, type LessonMode, MODE_SETTINGS } from "../lesson/lesson-mode";
 import { characterAnimation, currentLine, initialLessonState, lessonReducer } from "../lesson/lesson-progress";
 import type { PlayableLesson } from "../lesson/playable-lesson";
+import { scoreLesson } from "../lesson/scoring";
 import { LEARNER_SPEAKER } from "../schemas";
 import { FeedbackCard } from "./feedback-card";
 import { BreakdownCard } from "./breakdown-card";
+import { LessonSummary } from "./lesson-summary";
 import { SceneBubble } from "./scene-bubble";
 import { VoicePicker } from "./voice-picker";
 import { useBreakdown } from "./use-breakdown";
@@ -24,7 +26,7 @@ export interface LessonScreenProps {
   initialMode?: LessonMode;
   onExit: () => void;
   /** Called once when the learner reaches the end of the lesson. */
-  onComplete?: (result: { lessonId: string; goalsDone: number; goalsTotal: number; speaking: boolean }) => void;
+  onComplete?: (result: { lessonId: string; goalsDone: number; goalsTotal: number; speaking: boolean; xp: number }) => void;
 }
 
 const useBackdrop = (lesson: PlayableLesson): { url?: string } | undefined => {
@@ -58,8 +60,11 @@ export const LessonScreen = ({ lesson, initialMode = "typing", onExit, onComplet
   useEffect(() => {
     if (state.phase !== "done" || completed.current) return;
     completed.current = true;
-    onComplete?.({ lessonId: scenario.id, goalsDone: state.completedGoalIds.length, goalsTotal: scenario.goals.length, speaking: mode === "speaking" });
-  }, [state.phase, onComplete, scenario, state.completedGoalIds, mode]);
+    const speaking = mode === "speaking";
+    const { xp } = scoreLesson(scenario, state.attempts, { speaking });
+    onComplete?.({ lessonId: scenario.id, goalsDone: state.completedGoalIds.length, goalsTotal: scenario.goals.length, speaking, xp });
+  }, [state.phase, onComplete, scenario, state.completedGoalIds, state.attempts, mode]);
+  const score = state.phase === "done" ? scoreLesson(scenario, state.attempts, { speaking: mode === "speaking" }) : undefined;
   const changeMode = (next: LessonMode) => {
     setMode(next);
     setShowTranslation(MODE_SETTINGS[next].showTranslation);
@@ -262,14 +267,7 @@ export const LessonScreen = ({ lesson, initialMode = "typing", onExit, onComplet
           </>
         )}
 
-        {state.phase === "done" && (
-          <div className="done-card" role="status">
-            <h3>¡Lección completa!</h3>
-            <p>
-              {state.completedGoalIds.length} of {scenario.goals.length} goals done.
-            </p>
-          </div>
-        )}
+        {score && <LessonSummary score={score} language={scenario.language} onExit={onExit} />}
       </div>
     </section>
   );

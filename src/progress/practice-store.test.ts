@@ -19,7 +19,7 @@ const memoryStorage = (): Storage => {
 describe("localPracticeStore", () => {
   it("round-trips practice", () => {
     const store = localPracticeStore(memoryStorage());
-    const practice = { lastDay: "2026-11-14", streak: 3, best: 4, lessonsDone: 9, history: [] };
+    const practice = { lastDay: "2026-11-14", streak: 3, best: 4, lessonsDone: 9, xp: 120, history: [] };
     store.save(practice);
     expect(store.load()).toEqual(practice);
   });

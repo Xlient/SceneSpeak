@@ -10,6 +10,7 @@ export interface LeaderboardScreenProps {
   streak: number;
   best: number;
   lessonsDone: number;
+  xp: number;
   week: readonly WeekDay[];
   summary: WeeklySummary;
   language: string;
@@ -18,7 +19,7 @@ export interface LeaderboardScreenProps {
   onSignIn?: (() => void) | undefined;
 }
 
-export const LeaderboardScreen = ({ auth, streak, best, lessonsDone, week, summary, language, lessons, onPlayLesson, onSignIn }: LeaderboardScreenProps) => {
+export const LeaderboardScreen = ({ auth, streak, best, lessonsDone, xp, week, summary, language, lessons, onPlayLesson, onSignIn }: LeaderboardScreenProps) => {
   const name = auth.kind === "member" ? (auth.user.displayName ?? "You") : "You";
   return (
     <section className="page" aria-labelledby="leaderboard-title">
@@ -41,6 +42,10 @@ export const LeaderboardScreen = ({ auth, streak, best, lessonsDone, week, summa
           <div>
             <dt>Best streak</dt>
             <dd>{best}</dd>
+          </div>
+          <div>
+            <dt>Points</dt>
+            <dd>⭐ {xp}</dd>
           </div>
           <div>
             <dt>Lessons finished</dt>

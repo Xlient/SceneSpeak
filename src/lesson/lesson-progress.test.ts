@@ -33,6 +33,14 @@ describe("lessonReducer", () => {
     expect(state.completedGoalIds).toEqual(["greet"]);
   });
 
+  it("records every graded try for scoring", () => {
+    const state = run({ type: "next" }, { type: "submit" }, { type: "graded", result: result(false) }, { type: "retry" }, { type: "submit" }, { type: "graded", result: result(true) });
+    expect(state.attempts).toEqual([
+      { lineId: "l2", score: 30, ok: false },
+      { lineId: "l2", score: 90, ok: true },
+    ]);
+  });
+
   it("does not complete the goal when the grade is not ok, and allows a retry", () => {
     const state = run({ type: "next" }, { type: "submit" }, { type: "graded", result: result(false) }, { type: "retry" });
     expect(state.completedGoalIds).toEqual([]);

@@ -3,12 +3,20 @@ import type { GradeResult } from "./grader";
 
 export type LessonPhase = "listening" | "replying" | "grading" | "feedback" | "done";
 
+/** One graded try at a learner line, kept for scoring. */
+export interface Attempt {
+  lineId: string;
+  score: number;
+  ok: boolean;
+}
+
 export interface LessonState {
   lineIndex: number;
   phase: LessonPhase;
   completedGoalIds: readonly string[];
   lastResult: GradeResult | null;
   error: string | null;
+  attempts: readonly Attempt[];
 }
 
 export type LessonAction =
@@ -39,6 +47,7 @@ export const initialLessonState = (scenario: Scenario): LessonState => ({
   completedGoalIds: [],
   lastResult: null,
   error: null,
+  attempts: [],
 });
 
 export const currentLine = (scenario: Scenario, state: LessonState): Line | undefined => scenario.lines[state.lineIndex];
@@ -53,12 +62,14 @@ export const lessonReducer =
         return state.phase === "replying" ? { ...state, phase: "grading", error: null } : state;
       case "graded": {
         if (state.phase !== "grading") return state;
-        const goalId = currentLine(scenario, state)?.expects;
+        const line = currentLine(scenario, state);
+        const goalId = line?.expects;
+        const attempts = line ? [...state.attempts, { lineId: line.id, score: action.result.grade.score, ok: action.result.grade.ok }] : state.attempts;
         const completed =
           action.result.grade.ok && goalId && !state.completedGoalIds.includes(goalId)
             ? [...state.completedGoalIds, goalId]
             : state.completedGoalIds;
-        return { ...state, phase: "feedback", lastResult: action.result, completedGoalIds: completed };
+        return { ...state, phase: "feedback", lastResult: action.result, completedGoalIds: completed, attempts };
       }
       case "gradeFailed":
         return state.phase === "grading" ? { ...state, phase: "replying", error: action.message } : state;

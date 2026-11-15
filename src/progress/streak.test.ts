@@ -36,6 +36,12 @@ describe("history", () => {
     expect(day.history).toEqual([{ day: "2026-11-14", lessons: 2, goalsDone: 4, goalsTotal: 6, speaking: 1, lessonIds: ["cafe", "bakery"] }]);
   });
 
+  it("adds up XP across lessons and ignores bad values", () => {
+    const two = recordLesson(recordLesson(EMPTY_PRACTICE, "2026-11-14", { ...lesson("a"), xp: 80 }), "2026-11-14", { ...lesson("b"), xp: 45.4 });
+    expect(two.xp).toBe(125);
+    expect(recordLesson(two, "2026-11-14", { ...lesson("c"), xp: -5 }).xp).toBe(125);
+  });
+
   it("forgets days older than four weeks", () => {
     const old = recordLesson(EMPTY_PRACTICE, "2026-10-01", lesson("a"));
     expect(recordLesson(old, "2026-11-14", lesson("b")).history.map((d) => d.day)).toEqual(["2026-11-14"]);
@@ -55,7 +61,7 @@ describe("activeStreak", () => {
 describe("parsePractice", () => {
   it("falls back to empty for garbage and repairs bad fields", () => {
     expect(parsePractice("nope")).toEqual(EMPTY_PRACTICE);
-    expect(parsePractice({ lastDay: "yesterday", streak: -3, best: 2, lessonsDone: 1.5 })).toEqual({ lastDay: null, streak: 0, best: 2, lessonsDone: 0, history: [] });
+    expect(parsePractice({ lastDay: "yesterday", streak: -3, best: 2, lessonsDone: 1.5 })).toEqual({ lastDay: null, streak: 0, best: 2, lessonsDone: 0, xp: 0, history: [] });
   });
 
   it("keeps valid history days, sorted, and drops broken ones", () => {

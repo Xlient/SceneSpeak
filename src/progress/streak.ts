@@ -44,18 +44,21 @@ export const Practice = z.object({
   streak: count,
   best: count,
   lessonsDone: count,
+  /** Total points earned, from lesson scoring. */
+  xp: count,
   /** One entry per practised day, last four weeks only. Stays on this device. */
   history: keepValidDays.default([]),
 });
 export type Practice = z.infer<typeof Practice>;
 
-export const EMPTY_PRACTICE: Practice = { lastDay: null, streak: 0, best: 0, lessonsDone: 0, history: [] };
+export const EMPTY_PRACTICE: Practice = { lastDay: null, streak: 0, best: 0, lessonsDone: 0, xp: 0, history: [] };
 
 export interface FinishedLesson {
   lessonId: string;
   goalsDone: number;
   goalsTotal: number;
   speaking: boolean;
+  xp?: number;
 }
 
 const addToHistory = (history: readonly DayEntry[], today: DayKey, lesson: FinishedLesson | undefined): DayEntry[] => {
@@ -81,6 +84,7 @@ export const recordLesson = (practice: Practice, today: DayKey, lesson?: Finishe
     streak,
     best: Math.max(practice.best, streak),
     lessonsDone: practice.lessonsDone + 1,
+    xp: practice.xp + Math.max(0, Math.round(lesson?.xp ?? 0)),
     history: addToHistory(practice.history, today, lesson),
   };
 };

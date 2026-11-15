@@ -23,6 +23,7 @@ export const usePractice = (store?: PracticeStore) => {
     streak: activeStreak(practice, today),
     best: practice.best,
     lessonsDone: practice.lessonsDone,
+    xp: practice.xp,
     week: weekStrip(practice, today),
     summary: weeklySummary(practice, today),
     finishLesson,

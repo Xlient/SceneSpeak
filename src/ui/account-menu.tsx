@@ -10,11 +10,12 @@ export interface AccountMenuProps {
   onDeviceSetUp: () => void;
   streak: number;
   lessonsDone: number;
+  xp: number;
   monitorOpen: boolean;
   onToggleMonitor: () => void;
 }
 
-export const AccountMenu = ({ auth, device, onDeviceSetUp, streak, lessonsDone, monitorOpen, onToggleMonitor }: AccountMenuProps) => {
+export const AccountMenu = ({ auth, device, onDeviceSetUp, streak, lessonsDone, xp, monitorOpen, onToggleMonitor }: AccountMenuProps) => {
   const [open, setOpen] = useState(false);
   const panelId = useId();
   const root = useRef<HTMLDivElement>(null);
@@ -62,7 +63,7 @@ export const AccountMenu = ({ auth, device, onDeviceSetUp, streak, lessonsDone, 
             <div>
               <p className="menu-name">{name}</p>
               <p className="menu-sub">
-                {streak > 0 ? `🔥 ${streak}-day streak` : "🌱 No streak yet"} · {lessonsDone} {lessonsDone === 1 ? "lesson" : "lessons"}
+                {streak > 0 ? `🔥 ${streak}-day streak` : "🌱 No streak yet"} · ⭐ {xp} · {lessonsDone} {lessonsDone === 1 ? "lesson" : "lessons"}
               </p>
             </div>
           </div>

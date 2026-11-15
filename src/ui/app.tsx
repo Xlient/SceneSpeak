@@ -68,6 +68,7 @@ const Shell = ({ authClient }: { authClient: AuthClient | null }) => {
               onDeviceSetUp={device.setUp}
               streak={practice.streak}
               lessonsDone={practice.lessonsDone}
+              xp={practice.xp}
               monitorOpen={monitorOpen}
               onToggleMonitor={() => setMonitorOpen((open) => !open)}
             />
@@ -92,6 +93,7 @@ const Shell = ({ authClient }: { authClient: AuthClient | null }) => {
                 streak={practice.streak}
                 best={practice.best}
                 lessonsDone={practice.lessonsDone}
+                xp={practice.xp}
                 week={practice.week}
                 summary={practice.summary}
                 language="es"
