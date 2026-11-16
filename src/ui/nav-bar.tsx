@@ -9,7 +9,7 @@ const PAGES: readonly { id: Page; label: string }[] = [
 ];
 
 export interface NavBarProps {
-  current: Page;
+  current: Page | null;
   onNavigate: (page: Page) => void;
   streak: number;
   /** The account menu, rendered at the right end. */

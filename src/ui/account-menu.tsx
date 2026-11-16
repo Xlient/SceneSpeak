@@ -13,9 +13,10 @@ export interface AccountMenuProps {
   xp: number;
   monitorOpen: boolean;
   onToggleMonitor: () => void;
+  onShowTour: () => void;
 }
 
-export const AccountMenu = ({ auth, device, onDeviceSetUp, streak, lessonsDone, xp, monitorOpen, onToggleMonitor }: AccountMenuProps) => {
+export const AccountMenu = ({ auth, device, onDeviceSetUp, streak, lessonsDone, xp, monitorOpen, onToggleMonitor, onShowTour }: AccountMenuProps) => {
   const [open, setOpen] = useState(false);
   const panelId = useId();
   const root = useRef<HTMLDivElement>(null);
@@ -81,6 +82,17 @@ export const AccountMenu = ({ auth, device, onDeviceSetUp, streak, lessonsDone, 
 
           <button type="button" className="menu-item" aria-pressed={monitorOpen} onClick={onToggleMonitor}>
             📊 {monitorOpen ? "Hide" : "Show"} Model Monitor
+          </button>
+
+          <button
+            type="button"
+            className="menu-item"
+            onClick={() => {
+              setOpen(false);
+              onShowTour();
+            }}
+          >
+            👋 How SceneSpeak works
           </button>
 
           {auth.enabled && view.action && (

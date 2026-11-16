@@ -15,6 +15,10 @@ import { HomeScreen } from "./home-screen";
 import { LeaderboardScreen } from "./leaderboard-screen";
 import { LessonScreen } from "./lesson-screen";
 import { ModelMonitorPanel } from "./model-monitor-panel";
+import { PrivacyPage } from "./privacy-page";
+import { TermsPage } from "./terms-page";
+import { WelcomeTour } from "./welcome-tour";
+import { tourStore } from "../onboarding/tour-store";
 import { NavBar, type Page } from "./nav-bar";
 import { ServicesProvider } from "./services-context";
 import { useAuth } from "./use-auth";
@@ -24,7 +28,11 @@ import { usePractice } from "./use-practice";
 const ALL_LESSONS: readonly FeaturedLesson[] = [...FEATURED_LESSONS, ...COMMUNITY_LESSONS];
 const COACH_LESSONS = ALL_LESSONS.map((l) => ({ id: l.scenario.id, title: l.scenario.title, level: l.scenario.level }));
 
-type Screen = { kind: "page"; page: Page } | { kind: "create" } | { kind: "lesson"; lesson: PlayableLesson; mode: LessonMode };
+type Screen =
+  | { kind: "page"; page: Page }
+  | { kind: "create" }
+  | { kind: "lesson"; lesson: PlayableLesson; mode: LessonMode }
+  | { kind: "legal"; doc: "privacy" | "terms"; back: Screen };
 
 /** `auth: null` turns accounts off; omitted, it uses Firebase Auth when configured. */
 export const App = ({ services, auth }: { services?: AppServices; auth?: AuthClient | null }) => {
@@ -45,6 +53,16 @@ const Shell = ({ authClient }: { authClient: AuthClient | null }) => {
   const board = useMemo(createDefaultBoard, []);
   const [screen, setScreen] = useState<Screen>({ kind: "page", page: "lessons" });
   const [monitorOpen, setMonitorOpen] = useState(false);
+  const [tourOpen, setTourOpen] = useState(() => !tourStore.seen());
+  const closeTour = () => {
+    tourStore.markSeen();
+    setTourOpen(false);
+  };
+  const openLegal = (doc: "privacy" | "terms") => {
+    if (tourOpen) closeTour();
+    window.scrollTo({ top: 0 });
+    setScreen((current) => ({ kind: "legal", doc, back: current.kind === "legal" ? current.back : current }));
+  };
   const go = (page: Page) => setScreen({ kind: "page", page });
   const play = (featured: FeaturedLesson, mode: LessonMode) =>
     setScreen({ kind: "lesson", lesson: buildPlayableLesson(featured.scenario, featured.recipe), mode });
@@ -60,7 +78,7 @@ const Shell = ({ authClient }: { authClient: AuthClient | null }) => {
       </a>
       <div className="app">
         <NavBar
-          current={screen.kind === "page" ? screen.page : "lessons"}
+          current={screen.kind === "page" ? screen.page : screen.kind === "legal" ? null : "lessons"}
           onNavigate={go}
           streak={practice.streak}
           account={
@@ -73,6 +91,7 @@ const Shell = ({ authClient }: { authClient: AuthClient | null }) => {
               xp={practice.xp}
               monitorOpen={monitorOpen}
               onToggleMonitor={() => setMonitorOpen((open) => !open)}
+              onShowTour={() => setTourOpen(true)}
             />
           }
         />
@@ -116,6 +135,10 @@ const Shell = ({ authClient }: { authClient: AuthClient | null }) => {
                 onComplete={practice.finishLesson}
               />
             )}
+            {screen.kind === "legal" && screen.doc === "privacy" && <PrivacyPage onBack={() => setScreen(screen.back)} />}
+            {screen.kind === "legal" && screen.doc === "terms" && (
+              <TermsPage onBack={() => setScreen(screen.back)} onOpenPrivacy={() => openLegal("privacy")} />
+            )}
           </main>
           {monitorOpen && (
             <div id="monitor">
@@ -123,7 +146,31 @@ const Shell = ({ authClient }: { authClient: AuthClient | null }) => {
             </div>
           )}
         </div>
+
+        <footer className="site-footer">
+          <button type="button" className="link-button" onClick={() => setTourOpen(true)}>
+            How it works
+          </button>
+          <span aria-hidden="true">·</span>
+          <button type="button" className="link-button" onClick={() => openLegal("privacy")}>
+            Privacy
+          </button>
+          <span aria-hidden="true">·</span>
+          <button type="button" className="link-button" onClick={() => openLegal("terms")}>
+            Terms
+          </button>
+        </footer>
       </div>
+
+      {tourOpen && (
+        <WelcomeTour
+          device={device.status}
+          onSetUpDevice={device.setUp}
+          onOpenPrivacy={() => openLegal("privacy")}
+          onOpenTerms={() => openLegal("terms")}
+          onClose={closeTour}
+        />
+      )}
     </>
   );
 };
