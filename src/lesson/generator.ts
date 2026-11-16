@@ -1,9 +1,9 @@
 import type { SceneRecipe } from "../scene/recipe/scene-recipe";
-import type { Scenario } from "../schemas";
+import type { Intent, Scenario } from "../schemas";
 import { NotConnectedError } from "../services/not-connected";
 import type { InferenceSource } from "./grader";
 
-export const GENERATION_STEPS = ["device-check", "cloud-write"] as const;
+export const GENERATION_STEPS = ["device-check", "library-check", "cloud-write"] as const;
 export type GenerationStep = (typeof GENERATION_STEPS)[number];
 
 export interface GenerationProgress {
@@ -17,6 +17,8 @@ export interface LessonRequest {
   signal: AbortSignal;
   /** Call when each step starts so the UI can show where the work is running. */
   onProgress: (progress: GenerationProgress) => void;
+  /** False skips the library check, for "make mine anyway". */
+  allowExisting?: boolean;
 }
 
 export interface GeneratedLesson {
@@ -24,8 +26,19 @@ export interface GeneratedLesson {
   recipe: SceneRecipe;
 }
 
+/** A published library lesson that already covers the request. */
+export interface LibraryMatch {
+  id: string;
+  title: string;
+  votes: number;
+}
+
+export type GenerationResult =
+  | { kind: "generated"; lesson: GeneratedLesson; topic: string; intents: readonly Intent[] }
+  | { kind: "existing"; match: LibraryMatch };
+
 /** Y5 plugs in here: request → device safety/PII check → cloud Scenario + scene recipe. */
-export type LessonGenerator = (request: LessonRequest) => Promise<GeneratedLesson>;
+export type LessonGenerator = (request: LessonRequest) => Promise<GenerationResult>;
 
 export class GeneratorUnavailableError extends NotConnectedError {
   override readonly name = "GeneratorUnavailableError";

@@ -1,6 +1,7 @@
 import type { LoadedCommunityLesson } from "../lesson/community/community-lesson";
 import { contributors } from "../lesson/community/contributors";
 import type { FeaturedLesson } from "../lesson/featured/featured-lessons";
+import type { ReactNode } from "react";
 import type { LessonMode } from "../lesson/lesson-mode";
 import { LessonCard, languageName } from "./home-screen";
 import { LESSON_GUIDE_URL } from "./links";
@@ -8,9 +9,11 @@ import { LESSON_GUIDE_URL } from "./links";
 export interface CommunityScreenProps {
   lessons: readonly LoadedCommunityLesson[];
   onPlay: (lesson: FeaturedLesson, mode: LessonMode) => void;
+  /** The shared lesson library, shown above the reviewed community lessons. */
+  library?: ReactNode;
 }
 
-export const CommunityScreen = ({ lessons, onPlay }: CommunityScreenProps) => {
+export const CommunityScreen = ({ lessons, onPlay, library }: CommunityScreenProps) => {
   const people = contributors(lessons);
   return (
     <section className="page" aria-labelledby="community-title">
@@ -19,7 +22,9 @@ export const CommunityScreen = ({ lessons, onPlay }: CommunityScreenProps) => {
         <p>Lessons written by learners and teachers around the world, checked by our mods before they go live.</p>
       </div>
 
-      <h3 className="section-title">Community lessons</h3>
+      {library}
+
+      <h3 className="section-title">Reviewed community lessons</h3>
       {lessons.length === 0 ? (
         <p>No community lessons yet. Be the first!</p>
       ) : (

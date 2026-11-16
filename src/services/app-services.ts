@@ -3,6 +3,8 @@ import type { BackdropPainter, SpeechSource } from "../audio/media-sources";
 import { unavailableBackdrops, unavailableSpeech } from "../audio/media-sources";
 import { type BlobStore, cachedBlobSource, createCacheStorageStore } from "../cache/blob-cache";
 import { type LessonGenerator, unavailableGenerator } from "../lesson/generator";
+import { createDefaultLibrary } from "../library/default-library";
+import { type LibraryStore, unavailableLibrary } from "../library/library";
 import { type SentenceExplainer, unavailableExplainer } from "../lesson/sentence-breakdown";
 import { type PracticeCoach, unavailableCoach } from "../progress/coach";
 import { type Grader, unavailableGrader } from "../lesson/grader";
@@ -36,6 +38,8 @@ export interface AppServices {
   explainer: SentenceExplainer;
   coach: PracticeCoach;
   deviceSetup: DeviceSetup;
+  /** Published lessons (Firestore), shared by the Library page and the duplicate check. */
+  library: LibraryStore;
   /** False while `speech` is the stub, so the UI can say the AI voice is coming. */
   speechConnected: boolean;
   monitor: ModelMonitor;
@@ -50,6 +54,7 @@ export interface RawServices {
   explainer: SentenceExplainer;
   coach: PracticeCoach;
   deviceSetup: DeviceSetup;
+  library: LibraryStore;
 }
 
 export const STUB_SERVICES: RawServices = {
@@ -61,11 +66,13 @@ export const STUB_SERVICES: RawServices = {
   explainer: unavailableExplainer,
   coach: unavailableCoach,
   deviceSetup: createBrowserDeviceSetup(),
+  library: unavailableLibrary,
 };
 
 /** Stubs plus every capability that's wired to real AI so far. */
 export const createLiveServices = (): RawServices => {
   const deviceSetup = createBrowserDeviceSetup();
+  const library = createDefaultLibrary();
   return {
     ...STUB_SERVICES,
     deviceSetup,
@@ -73,7 +80,8 @@ export const createLiveServices = (): RawServices => {
     voiceGrader: createLiveVoiceGrader(),
     explainer: createLiveExplainer({ deviceStatus: deviceSetup.status.get }),
     coach: createLiveCoach({ deviceStatus: deviceSetup.status.get }),
-    generator: createLiveGenerator({ deviceStatus: deviceSetup.status.get }),
+    library,
+    generator: createLiveGenerator({ deviceStatus: deviceSetup.status.get, library }),
   };
 };
 
@@ -93,10 +101,11 @@ export const createAppServices = (raw: RawServices = STUB_SERVICES, stores: Serv
   return {
     monitor,
     deviceSetup: raw.deviceSetup,
+    library: raw.library,
     speechConnected: raw.speech !== unavailableSpeech,
     grader: monitored(monitor, "grade", raw.grader, (r) => r.source, "on_device", { routeOf: (r) => r.route }),
     voiceGrader: monitored(monitor, "grade-voice", raw.voiceGrader, (r) => r.source, "in_cloud", { routeOf: (r) => r.route }),
-    generator: monitored(monitor, "generate", raw.generator, () => "in_cloud", "in_cloud"),
+    generator: monitored(monitor, "generate", raw.generator, (r) => (r.kind === "existing" ? "on_device" : "in_cloud"), "in_cloud"),
     explainer: monitored(monitor, "explain", raw.explainer, (r) => r.source, "on_device", { routeOf: (r) => r.route }),
     coach: monitored(monitor, "coach", raw.coach, (r) => r.source, "on_device", { routeOf: (r) => r.route }),
     speech: cachedBlobSource(monitored(monitor, "speak", raw.speech, () => "in_cloud", "in_cloud"), stores.speech),
