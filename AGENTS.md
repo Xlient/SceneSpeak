@@ -26,7 +26,7 @@ SceneSpeak: 5-minute language lessons in low-poly 3D scenes. Gemini Nano grades 
 - Every AI call goes through Firebase AI Logic hybrid inference: on-device first, cloud fallback.
 - App Check is required (debug tokens accepted).
 - The repo must import **and call** `firebase/ai` at runtime, not just mention it in docs.
-- The repo needs an open source license file (Apache-2.0 preferred).
+- The repo needs an open source license file. SceneSpeak uses AGPL-3.0; keep the README, `package.json` and Terms page in sync with it.
 - The README must state the value proposition and give complete setup steps.
 - The app must be free to use. All materials in English.
 
