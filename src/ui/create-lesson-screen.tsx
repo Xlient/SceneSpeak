@@ -103,7 +103,7 @@ export const CreateLessonScreen = ({ onReady, onCancel }: CreateLessonScreenProp
           onChange={(event) => setPrompt(event.target.value)}
         />
         <p id="prompt-help" className="audio-note">
-          {prompt.length}/{LESSON_PROMPT_MAX}. Personal details are removed on your device before anything goes to the cloud.
+          {prompt.length}/{LESSON_PROMPT_MAX}. Personal details are removed on your device, then your request goes to Google's Gemini to write the lesson.
         </p>
         {inputError && (
           <p className="error" role="alert">
