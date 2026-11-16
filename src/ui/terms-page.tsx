@@ -43,7 +43,7 @@ export const TermsPage = ({ onBack, onOpenPrivacy }: { onBack: () => void; onOpe
 
     <h3>Open source</h3>
     <p>
-      SceneSpeak's code is open source under the Apache License 2.0:{" "}
+      SceneSpeak's code is open source under the GNU Affero General Public License v3.0 (AGPL-3.0):{" "}
       <a href={REPO_URL} target="_blank" rel="noreferrer">
         view it on GitHub
       </a>
