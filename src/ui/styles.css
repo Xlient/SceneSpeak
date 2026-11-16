@@ -1834,3 +1834,72 @@ button.chip {
   border-radius: var(--radius-small);
   background: var(--butter);
 }
+
+/* Lesson library */
+
+.library-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+.library-search input {
+  width: min(16rem, 100%);
+  padding: 0.5rem 0.8rem;
+  border: var(--outline);
+  border-radius: 999px;
+  background: #fff;
+  font: inherit;
+  color: var(--ink);
+}
+
+.library-search input:focus-visible {
+  outline: 3px solid var(--mint-deep);
+  outline-offset: 2px;
+}
+
+.vote-button.voted {
+  background: var(--mint);
+}
+
+.report-button {
+  justify-self: start;
+  font-size: 0.8rem;
+  color: var(--ink-soft);
+}
+
+.report-confirm {
+  margin: 0;
+  font-size: 0.85rem;
+}
+
+.publish-bar,
+.existing-card {
+  display: grid;
+  gap: 0.6rem;
+  justify-items: start;
+}
+
+.publish-bar {
+  padding: 0.9rem 1rem;
+  margin-bottom: 1rem;
+  background: var(--butter);
+}
+
+.publish-bar p {
+  margin: 0;
+}
+
+.existing-card {
+  background: var(--lilac);
+}
+
+.app-notice {
+  margin: 0 0 1rem;
+  padding: 0.6rem 0.9rem;
+  border: 2px solid var(--ink);
+  border-radius: var(--radius-small);
+  background: var(--cream);
+}

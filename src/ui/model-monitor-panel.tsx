@@ -7,6 +7,7 @@ const TASK_LABEL: Record<ModelEvent["task"], string> = {
   grade: "Grade reply",
   "grade-voice": "Grade voice",
   screen: "Check request",
+  match: "Find similar lesson",
   generate: "Write lesson",
   paint: "Paint backdrop",
   speak: "Character voice",

@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { CATALOG } from "../scene/catalog/catalog";
 import { goodLesson, goodLessonJson, lessonJsonWith } from "./lesson-fixtures";
-import { LessonParseError, parseLesson, parseModelJson } from "./lesson-parse";
+import { LessonParseError, lessonShortfalls, parseLesson, parseModelJson } from "./lesson-parse";
 
 const options = { catalog: CATALOG, language: "es" };
 
@@ -73,5 +73,17 @@ describe("parseLesson", () => {
 
   it("rejects JSON without a scenario or recipe", () => {
     expect(problemsOf(JSON.stringify({ title: "Hi" })).length).toBeGreaterThan(0);
+  });
+});
+
+describe("lessonShortfalls", () => {
+  it("passes a full lesson", () => {
+    expect(lessonShortfalls(goodLesson.scenario.lines)).toEqual([]);
+  });
+
+  it("flags too few lines and too few learner turns", () => {
+    const short = lessonShortfalls(goodLesson.scenario.lines.slice(0, 3));
+    expect(short.join("\n")).toMatch(/only 3 lines/);
+    expect(short.join("\n")).toMatch(/only 1 learner turn/);
   });
 });

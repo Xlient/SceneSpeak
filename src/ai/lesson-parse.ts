@@ -34,7 +34,22 @@ export interface ParseLessonOptions {
 export interface ParsedLesson {
   lesson: GeneratedLesson;
   issues: readonly RecipeIssue[];
+  /** Playable but thinner than asked for; worth one repair, never worth failing over. */
+  shortfalls: readonly string[];
 }
+
+export const MIN_LESSON_LINES = 6;
+export const MIN_LEARNER_TURNS = 2;
+
+export const lessonShortfalls = (lines: readonly { speaker: string; expects: string | null }[]): string[] => {
+  const learnerTurns = lines.filter((line) => line.speaker === LEARNER_SPEAKER && line.expects !== null).length;
+  return [
+    ...(lines.length < MIN_LESSON_LINES ? [`scenario.lines: only ${lines.length} lines; write at least ${MIN_LESSON_LINES}`] : []),
+    ...(learnerTurns < MIN_LEARNER_TURNS
+      ? [`scenario.lines: only ${learnerTurns} learner turn(s) with a goal; write at least ${MIN_LEARNER_TURNS}`]
+      : []),
+  ];
+};
 
 const LessonShape = z.object({ scenario: z.unknown(), recipe: z.unknown() });
 
@@ -64,5 +79,6 @@ export const parseLesson = (raw: string, { catalog, language }: ParseLessonOptio
   return {
     lesson: { scenario, recipe: recipe.data },
     issues: resolveRecipe(recipe.data, catalog, scenario).issues,
+    shortfalls: lessonShortfalls(scenario.lines),
   };
 };

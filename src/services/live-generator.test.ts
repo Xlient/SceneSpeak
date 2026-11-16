@@ -2,6 +2,7 @@ import type { InferenceMode, InferenceSource } from "firebase/ai";
 import { describe, expect, it, vi } from "vitest";
 import type { DeviceModelStatus } from "../ai/device";
 import { goodLessonJson, safeScreenJson } from "../ai/lesson-fixtures";
+import { unavailableLibrary } from "../library/library";
 import { type ModelRole, createLiveGenerator } from "./live-generator";
 
 const request = () => ({
@@ -30,9 +31,10 @@ describe("createLiveGenerator", () => {
 
   it("screens on-device first and always writes in the cloud", async () => {
     const { generator, makeModel } = setup();
-    const lesson = await generator(request());
+    const result = await generator(request());
 
-    expect(lesson.scenario.lines.length).toBeGreaterThan(0);
+    if (result.kind !== "generated") throw new Error("expected a generated lesson");
+    expect(result.lesson.scenario.lines.length).toBeGreaterThan(0);
     expect(makeModel).toHaveBeenCalledWith("screen", "prefer_on_device");
     expect(makeModel).toHaveBeenCalledWith("write", "only_in_cloud");
   });
@@ -59,5 +61,25 @@ describe("createLiveGenerator", () => {
       },
     });
     await expect(generator(request())).rejects.toThrow("no config");
+  });
+
+  it("suggests a published lesson found on-device instead of writing one", async () => {
+    const row = { id: "lib-1", title: "Meeting the neighbours", topic: "meeting a new neighbour", language: "es", level: "A1", intents: ["greet"], authorUid: "u", authorName: "Sam", votes: 5, hidden: false };
+    const library = { ...unavailableLibrary, list: async () => [row] };
+    const writeCalls = vi.fn();
+    const makeModel = vi.fn((role: ModelRole, _mode: InferenceMode) => ({
+      generateText: vi.fn(async () => {
+        if (role === "write") writeCalls();
+        return {
+          text: role === "screen" ? safeScreenJson : role === "match" ? '{"matchId":"lib-1"}' : goodLessonJson,
+          source: "on_device" as InferenceSource | undefined,
+        };
+      }),
+    }));
+    const generator = createLiveGenerator({ deviceStatus: () => ({ kind: "ready" }), isOnline: () => true, makeModel, library });
+
+    expect(await generator(request())).toEqual({ kind: "existing", match: { id: "lib-1", title: "Meeting the neighbours", votes: 5 } });
+    expect(makeModel).toHaveBeenCalledWith("match", "prefer_on_device");
+    expect(writeCalls).not.toHaveBeenCalled();
   });
 });

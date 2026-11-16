@@ -1,7 +1,7 @@
 rules_version = '2';
 
-// SceneSpeak stores only the weekly leaderboard. Practice history, typed replies
-// and recordings never leave the device.
+// SceneSpeak stores the weekly leaderboard, the public lesson library and the shared backdrop index.
+// Practice history, typed replies and recordings never leave the device.
 service cloud.firestore {
   match /databases/{database}/documents {
 
@@ -16,6 +16,24 @@ service cloud.firestore {
         && validEntry(request.resource.data);
 
       allow delete: if isOwnGoogleUser(uid);
+    }
+
+    // backdrops/{sha256}: index of the shared backdrop cache (the image itself is in Cloud Storage).
+    // No scene text is stored: the id is a one-way hash of it.
+    match /backdrops/{key} {
+      allow read: if request.auth != null;
+      allow create: if request.auth != null
+        && key.matches('^[0-9a-f]{64}$')
+        && validBackdrop(key, request.resource.data);
+      allow update, delete: if false;
+    }
+
+    function validBackdrop(key, data) {
+      return data.keys().hasOnly(['path', 'contentType', 'createdAt'])
+        && data.path is string
+        && data.path.matches('^backdrops/' + key + '[.](jpg|png|webp)$')
+        && data.contentType in ['image/jpeg', 'image/png', 'image/webp']
+        && data.createdAt == request.time;
     }
 
     function isOwnGoogleUser(uid) {
@@ -33,6 +51,99 @@ service cloud.firestore {
         && data.daysPractised >= 0
         && data.daysPractised <= 7
         && data.updatedAt == request.time;
+    }
+
+    // library/{lessonId}: published lessons. Only Google users publish, vote or report.
+    match /library/{lessonId} {
+      allow get, list: if request.auth != null
+        && (resource.data.hidden == false || resource.data.authorUid == request.auth.uid);
+
+      allow create: if isGoogleUser()
+        && request.resource.data.authorUid == request.auth.uid
+        && validLibraryEntry(request.resource.data)
+        && request.resource.data.votes == 0
+        && request.resource.data.reports == 0
+        && request.resource.data.hidden == false
+        && request.resource.data.createdAt == request.time
+        && existsAfter(contentPath(lessonId));
+
+      // Votes and reports only move by one, together with the voter's own marker document.
+      allow update: if isGoogleUser() && (voteChange(lessonId) || reportChange(lessonId));
+
+      allow delete: if isGoogleUser() && resource.data.authorUid == request.auth.uid;
+
+      match /content/{docId} {
+        allow get: if request.auth != null
+          && (get(entryPath(lessonId)).data.hidden == false || get(entryPath(lessonId)).data.authorUid == request.auth.uid);
+        allow create: if isGoogleUser()
+          && docId == 'lesson'
+          && !exists(entryPath(lessonId))
+          && getAfter(entryPath(lessonId)).data.authorUid == request.auth.uid
+          && request.resource.data.keys().hasOnly(['lesson'])
+          && request.resource.data.lesson is string
+          && request.resource.data.lesson.size() <= 60000;
+      }
+
+      match /votes/{uid} {
+        allow get: if request.auth != null && request.auth.uid == uid;
+        allow create: if isOwnGoogleUser(uid)
+          && request.resource.data.keys().hasOnly(['at'])
+          && request.resource.data.at == request.time
+          && getAfter(entryPath(lessonId)).data.votes == get(entryPath(lessonId)).data.votes + 1;
+        allow delete: if isOwnGoogleUser(uid)
+          && getAfter(entryPath(lessonId)).data.votes == get(entryPath(lessonId)).data.votes - 1;
+      }
+
+      match /reports/{uid} {
+        allow create: if isOwnGoogleUser(uid)
+          && request.resource.data.keys().hasOnly(['at'])
+          && request.resource.data.at == request.time
+          && getAfter(entryPath(lessonId)).data.reports == get(entryPath(lessonId)).data.reports + 1;
+      }
+    }
+
+    function entryPath(lessonId) {
+      return /databases/$(database)/documents/library/$(lessonId);
+    }
+
+    function contentPath(lessonId) {
+      return /databases/$(database)/documents/library/$(lessonId)/content/lesson;
+    }
+
+    function isGoogleUser() {
+      return request.auth != null && request.auth.token.firebase.sign_in_provider != 'anonymous';
+    }
+
+    function onlyChanged(fields) {
+      return request.resource.data.diff(resource.data).affectedKeys().hasOnly(fields);
+    }
+
+    function voteChange(lessonId) {
+      let voteDoc = /databases/$(database)/documents/library/$(lessonId)/votes/$(request.auth.uid);
+      let delta = request.resource.data.votes - resource.data.votes;
+      return onlyChanged(['votes'])
+        && ((delta == 1 && !exists(voteDoc) && existsAfter(voteDoc))
+          || (delta == -1 && exists(voteDoc) && !existsAfter(voteDoc)));
+    }
+
+    function reportChange(lessonId) {
+      let reportDoc = /databases/$(database)/documents/library/$(lessonId)/reports/$(request.auth.uid);
+      return onlyChanged(['reports', 'hidden'])
+        && request.resource.data.reports == resource.data.reports + 1
+        && request.resource.data.hidden == (request.resource.data.reports >= 3)
+        && !exists(reportDoc)
+        && existsAfter(reportDoc);
+    }
+
+    function validLibraryEntry(data) {
+      return data.keys().hasOnly(['title', 'topic', 'language', 'level', 'intents', 'authorUid', 'authorName',
+          'votes', 'reports', 'hidden', 'createdAt'])
+        && data.title is string && data.title.size() > 0 && data.title.size() <= 80
+        && data.topic is string && data.topic.size() > 0 && data.topic.size() <= 200
+        && data.language is string && data.language.matches('^[a-z]{2}$')
+        && data.level in ['A1', 'A2', 'B1', 'B2', 'C1', 'C2']
+        && data.intents is list && data.intents.size() <= 6
+        && data.authorName is string && data.authorName.size() > 0 && data.authorName.size() <= 40;
     }
 
     // Everything else is closed.

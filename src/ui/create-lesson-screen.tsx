@@ -1,5 +1,6 @@
 import { type FormEvent, useEffect, useRef, useState } from "react";
-import { type GenerationStep, LESSON_PROMPT_MAX, checkLessonPrompt } from "../lesson/generator";
+import { type GenerationStep, LESSON_PROMPT_MAX, type LibraryMatch, checkLessonPrompt } from "../lesson/generator";
+import type { LessonOrigin } from "../lesson/lesson-origin";
 import { type PlayableLesson, buildPlayableLesson } from "../lesson/playable-lesson";
 import { CATALOG } from "../scene/catalog/catalog";
 import { catalogAssetUrls, prefetchUrls } from "../scene/catalog/preload";
@@ -18,20 +19,27 @@ const warmScene = () => {
 
 const STEPS: readonly { id: StepId; label: string; where: "device" | "cloud" | "local" }[] = [
   { id: "device-check", label: "Checking your request privately", where: "device" },
+  { id: "library-check", label: "Looking for a lesson that already exists", where: "device" },
   { id: "cloud-write", label: "Writing the lesson", where: "cloud" },
   { id: "build", label: "Building the 3D scene", where: "local" },
 ];
 
 const WHERE_LABEL = { device: "On your device", cloud: "Cloud", local: "In your browser" } as const;
 
-type Status = { kind: "editing" } | { kind: "working"; step: StepId } | { kind: "failed"; step: StepId; message: string };
+type Status =
+  | { kind: "editing" }
+  | { kind: "working"; step: StepId }
+  | { kind: "failed"; step: StepId; message: string }
+  | { kind: "existing"; match: LibraryMatch; prompt: string };
 
 export interface CreateLessonScreenProps {
-  onReady: (lesson: PlayableLesson) => void;
+  onReady: (lesson: PlayableLesson, origin: LessonOrigin) => void;
+  /** Opens a published library lesson instead of writing a new one. */
+  onPlayLibrary: (id: string) => void;
   onCancel: () => void;
 }
 
-export const CreateLessonScreen = ({ onReady, onCancel }: CreateLessonScreenProps) => {
+export const CreateLessonScreen = ({ onReady, onPlayLibrary, onCancel }: CreateLessonScreenProps) => {
   const { generator } = useServices();
   const [prompt, setPrompt] = useState("");
   const [status, setStatus] = useState<Status>({ kind: "editing" });
@@ -41,7 +49,7 @@ export const CreateLessonScreen = ({ onReady, onCancel }: CreateLessonScreenProp
   useEffect(() => () => controller.current?.abort(), []);
   useEffect(warmScene, []);
 
-  const submit = async (event: FormEvent) => {
+  const submit = (event: FormEvent) => {
     event.preventDefault();
     const check = checkLessonPrompt(prompt);
     if (!check.ok) {
@@ -49,6 +57,10 @@ export const CreateLessonScreen = ({ onReady, onCancel }: CreateLessonScreenProp
       return;
     }
     setInputError(null);
+    void run(check.prompt, true);
+  };
+
+  const run = async (request: string, allowExisting: boolean) => {
     controller.current?.abort();
     const current = new AbortController();
     controller.current = current;
@@ -59,17 +71,23 @@ export const CreateLessonScreen = ({ onReady, onCancel }: CreateLessonScreenProp
     };
     advance("device-check");
     try {
-      const generated = await generator({
-        prompt: check.prompt,
+      const result = await generator({
+        prompt: request,
         language: "es",
         signal: current.signal,
+        allowExisting,
         onProgress: (progress) => {
           if (!current.signal.aborted) advance(progress.step);
         },
       });
       if (current.signal.aborted) return;
+      if (result.kind === "existing") {
+        setStatus({ kind: "existing", match: result.match, prompt: request });
+        return;
+      }
       advance("build");
-      onReady({ ...buildPlayableLesson(generated.scenario, generated.recipe), backdrop: {} });
+      const { lesson, topic, intents } = result;
+      onReady({ ...buildPlayableLesson(lesson.scenario, lesson.recipe), backdrop: {} }, { kind: "generated", lesson, topic, intents });
     } catch (error) {
       if (current.signal.aborted) return;
       setStatus({ kind: "failed", step, message: generateErrorMessage(error) });
@@ -77,7 +95,7 @@ export const CreateLessonScreen = ({ onReady, onCancel }: CreateLessonScreenProp
   };
 
   const working = status.kind === "working";
-  const activeIndex = status.kind === "editing" ? -1 : STEPS.findIndex((s) => s.id === status.step);
+  const activeIndex = status.kind === "working" || status.kind === "failed" ? STEPS.findIndex((s) => s.id === status.step) : -1;
 
   return (
     <section className="create" aria-labelledby="create-title">
@@ -124,7 +142,31 @@ export const CreateLessonScreen = ({ onReady, onCancel }: CreateLessonScreenProp
         </div>
       </form>
 
-      {status.kind !== "editing" && (
+      {status.kind === "existing" && (
+        <div className="card panel existing-card" role="status">
+          <h3>There's already a lesson for that!</h3>
+          <p>
+            <strong>{status.match.title}</strong> in the lesson library covers the same situation
+            {status.match.votes > 0 && (
+              <>
+                {" "}
+                and has <span aria-hidden="true">▲</span> {status.match.votes} {status.match.votes === 1 ? "upvote" : "upvotes"}
+              </>
+            )}
+            . Playing it is instant and saves writing a new one in the cloud.
+          </p>
+          <div className="actions">
+            <button type="button" className="big" onClick={() => onPlayLibrary(status.match.id)}>
+              Play it
+            </button>
+            <button type="button" className="secondary" onClick={() => void run(status.prompt, false)}>
+              Make mine anyway
+            </button>
+          </div>
+        </div>
+      )}
+
+      {(status.kind === "working" || status.kind === "failed") && (
         <div className="card panel">
           <h3>Progress</h3>
           <ol className="steps" aria-live="polite">
