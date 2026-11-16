@@ -65,4 +65,20 @@ describe("createLiveCoach", () => {
     expect(error).toBeInstanceOf(NotConnectedError);
     expect(makeModel).not.toHaveBeenCalled();
   });
+
+  it("asks for setup when Nano isn't downloaded yet", async () => {
+    const coach = createLiveCoach({
+      deviceStatus: () => ({ kind: "idle" }),
+      makeModel: () => ({ generateText: async () => Promise.reject(new Error("on-device model unavailable")) }),
+    });
+    await expect(coach(request())).rejects.toBeInstanceOf(CoachNeedsDeviceError);
+  });
+
+  it("passes other errors through once Nano is ready", async () => {
+    const coach = createLiveCoach({
+      deviceStatus: () => ({ kind: "ready" }),
+      makeModel: () => ({ generateText: async () => Promise.reject(new Error("boom")) }),
+    });
+    await expect(coach(request())).rejects.toThrow("boom");
+  });
 });

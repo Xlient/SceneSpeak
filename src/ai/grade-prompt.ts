@@ -11,6 +11,7 @@ export const GRADE_SYSTEM_INSTRUCTION = `You grade a language learner's reply in
 Rules:
 - Judge meaning first. ok = true if the reply is understandable and does the goal, even if it differs from the example answer.
 - Be gentle at A1/A2: small spelling or accent slips don't make ok false; fix them in correction.
+- A reply much shorter than the example that leaves parts out can still be ok if it does the goal, but score it 60-75 and use the hint to suggest the fuller sentence.
 - meaningMatches = true if the reply means roughly what the example answer means.
 - score 0-100: 90+ natural and correct, 70-89 small mistakes, 40-69 understandable but flawed, below 40 not understandable or off-topic.
 - errorType: the main problem, one of ${ERROR_TYPES.join(", ")}.
