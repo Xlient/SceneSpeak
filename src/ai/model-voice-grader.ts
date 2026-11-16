@@ -2,6 +2,7 @@ import type { AudioEncoder } from "../audio/wav";
 import type { VoiceGrader } from "../lesson/voice-grader";
 import { GradeParseError } from "./grade-parse";
 import type { AppModel } from "./model";
+import { capPartialReply } from "./quick-grade";
 import { parseVoiceGrade } from "./voice-grade-parse";
 import { buildVoiceGradePrompt } from "./voice-grade-prompt";
 
@@ -22,7 +23,7 @@ export const createModelVoiceGrader =
         timeoutMs: VOICE_GRADE_TIMEOUT_MS,
       });
       const { grade, transcript } = parseVoiceGrade(result.text, request.line);
-      return { grade, transcript, source: result.source ?? "in_cloud" };
+      return { grade: capPartialReply(grade, request.line, transcript), transcript, source: result.source ?? "in_cloud" };
     };
 
     try {

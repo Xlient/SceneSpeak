@@ -7,6 +7,7 @@ import { createModelCoach } from "../ai/model-coach";
 import { type TextModel, createModelExplainer } from "../ai/model-explainer";
 import type { SentenceExplainer } from "../lesson/sentence-breakdown";
 import type { PracticeCoach } from "../progress/coach";
+import { AiAbortedError } from "../ai/with-timeout";
 import { routeAiCall } from "../routing/route";
 import { NotConnectedError } from "./not-connected";
 
@@ -69,7 +70,13 @@ export const createLiveCoach = ({
     const device = deviceStatus().kind;
     if (device === "not-supported" || device === "unavailable") throw new CoachNeedsDeviceError();
     const route = routeAiCall({ task: "coach", device, language: request.language, online: true });
-    const result = await coachFor(route.mode)(request);
-    return { ...result, route: route.reason };
+    try {
+      const result = await coachFor(route.mode)(request);
+      return { ...result, route: route.reason };
+    } catch (error) {
+      // "idle" can mean Chrome has the Prompt API but Nano was never downloaded; point the learner at Set up.
+      if (device === "idle" && !(error instanceof AiAbortedError)) throw new CoachNeedsDeviceError();
+      throw error;
+    }
   };
 };

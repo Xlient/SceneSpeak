@@ -130,7 +130,8 @@ button,
   align-items: start;
 }
 
-@media (max-width: 52rem) {
+/* Container queries, so the lesson stacks whenever main is narrow, including when the monitor takes space. */
+@container content (max-width: 48rem) {
   .lesson {
     grid-template-columns: minmax(0, 1fr);
   }
@@ -424,13 +425,39 @@ input:focus-visible,
   align-items: start;
 }
 
+main {
+  container: content / inline-size;
+  min-width: 0;
+}
+
 .layout.with-monitor {
   grid-template-columns: minmax(0, 1fr) 20rem;
 }
 
-@media (max-width: 64rem) {
+/* Widen the page so the lesson keeps its full width beside the monitor. */
+.app:has(.layout.with-monitor) {
+  max-width: 86rem;
+}
+
+/* Too narrow for both side by side: the monitor slides over the page as a drawer. */
+@media (max-width: 80rem) {
   .layout.with-monitor {
     grid-template-columns: minmax(0, 1fr);
+  }
+
+  #monitor {
+    position: fixed;
+    inset: 0 0 0 auto;
+    z-index: 15;
+    width: min(22rem, 100%);
+    padding: 0.75rem;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+  }
+
+  #monitor .monitor {
+    position: static;
+    box-shadow: -0.5rem 0 1.5rem rgb(0 0 0 / 0.18);
   }
 }
 
@@ -979,8 +1006,8 @@ button.chip {
   color: var(--ink-soft);
 }
 
-/* On phones the bubble would hide the character, so it sits under the scene instead. */
-@media (max-width: 40rem) {
+/* When the scene is narrow the bubble would hide the character, so it sits under the scene instead. */
+@container content (max-width: 38rem) {
   .scene-bubble,
   .scene-bubble.character {
     position: static;
