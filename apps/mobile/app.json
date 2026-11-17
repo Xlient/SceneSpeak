@@ -1,0 +1,44 @@
+{
+  "expo": {
+    "name": "SceneSpeak",
+    "slug": "scenespeak",
+    "scheme": "scenespeak",
+    "version": "0.1.0",
+    "orientation": "portrait",
+    "userInterfaceStyle": "light",
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "dev.scenespeak.app"
+    },
+    "android": {
+      "package": "dev.scenespeak.app"
+    },
+    "web": {
+      "bundler": "metro",
+      "output": "single"
+    },
+    "plugins": [
+      "expo-router",
+      "expo-asset",
+      [
+        "expo-audio",
+        {
+          "microphonePermission": "SceneSpeak uses the microphone only while you record a spoken reply. The recording is graded once and never saved."
+        }
+      ],
+      [
+        "expo-build-properties",
+        {
+          "android": {
+            "minSdkVersion": 26,
+            "kotlinVersion": "2.4.0",
+            "extraProguardRules": "# expo-gl creates GLView by reflection; R8 would strip its constructor (crash on the 3D scene).\n-keep class expo.modules.gl.** { *; }"
+          },
+          "ios": {
+            "deploymentTarget": "16.4"
+          }
+        }
+      ]
+    ]
+  }
+}

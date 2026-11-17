@@ -2,7 +2,7 @@
 
 ## Adding a lesson?
 
-- [ ] File is at `lessons/<language>/<id>.json` and follows `lessons/README.md`
+- [ ] File is at `packages/core/lessons/<language>/<id>.json` and follows `packages/core/lessons/README.md`
 - [ ] `pnpm test` passes locally (it validates every lesson)
 - [ ] I played it in `pnpm dev` and the scene looks right
 - [ ] I'm a fluent speaker of this language, or a fluent speaker has checked the text
