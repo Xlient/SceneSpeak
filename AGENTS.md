@@ -9,7 +9,7 @@ SceneSpeak: 5-minute language lessons in low-poly 3D scenes. Gemini Nano grades 
 ## Hard rules
 
 - **AI goes through Firebase AI Logic only** (`firebase/ai`): Gemini in the cloud, Gemini Nano on-device via hybrid inference. No other AI SDKs or direct API calls.
-- **The user owns `src/ai/` (Firebase inference code), `src/routing/`, the scoring logic, and `evals/` (evals and harnesses).** Guide there with concepts and small pseudocode, and review the user's work, but don't implement unless the user asks for code.
+- **The user owns `packages/core/src/ai/` (Firebase inference code), `packages/core/src/routing/`, the native AI bridge (`apps/mobile/modules/hybrid-ai/`), the scoring logic, and `evals/` (evals and harnesses).** Guide there with concepts and small pseudocode, and review the user's work, but don't implement unless the user asks for code.
 - **Never commit or push.** The user commits.
 - **No secrets in the repo.** Real config lives only in `.env.local`. Never read or write it.
 - **No new dependencies without asking.** Pin exact versions.
@@ -19,7 +19,7 @@ SceneSpeak: 5-minute language lessons in low-poly 3D scenes. Gemini Nano grades 
 ## Look and feel
 
 - Cute chibi characters, low-poly scenes, family friendly.
-- UI matches KayKit's style: soft pastels, chunky rounded shapes, thick outlines, toy-like 3D buttons, rounded type. Keep new UI consistent with `src/ui/styles.css` tokens.
+- UI matches KayKit's style: soft pastels, chunky rounded shapes, thick outlines, toy-like 3D buttons, rounded type. Keep new UI consistent with `apps/web/src/ui/styles.css` tokens (mirrored for mobile in `apps/mobile/src/theme/tokens.ts`).
 
 ## Hackathon constraints (#BuildHybridAI, due Nov 30, 2026 2 PM PT)
 

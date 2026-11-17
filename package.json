@@ -9,28 +9,18 @@
     "node": ">=25"
   },
   "scripts": {
-    "dev": "vite",
-    "build": "tsc --noEmit && vite build",
-    "typecheck": "tsc --noEmit",
-    "test": "vitest run",
+    "dev": "pnpm --filter @scenespeak/web dev",
+    "mobile": "pnpm --filter @scenespeak/mobile start",
+    "build": "pnpm --filter @scenespeak/web build",
+    "typecheck": "pnpm -r typecheck",
+    "test": "pnpm -r test",
     "test:rules": "firebase emulators:exec --only firestore --project demo-scenespeak \"vitest run --config vitest.rules.config.ts\""
-  },
-  "dependencies": {
-    "firebase": "13.1.0",
-    "react": "19.3.1",
-    "react-dom": "19.3.1",
-    "three": "0.186.1",
-    "zod": "4.6.7"
   },
   "devDependencies": {
     "@firebase/rules-unit-testing": "6.0.0",
-    "@types/react": "19.3.0",
-    "@types/react-dom": "19.3.0",
-    "@types/three": "0.186.0",
-    "@vitejs/plugin-react": "6.1.2",
+    "firebase": "13.1.0",
     "firebase-tools": "15.36.0",
     "typescript": "5.9.3",
-    "vite": "8.3.5",
     "vitest": "5.0.5"
   }
 }

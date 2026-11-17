@@ -1,21 +1,13 @@
 {
   "compilerOptions": {
     "target": "ES2023",
-    "lib": ["ES2023", "DOM", "DOM.Iterable"],
     "module": "ESNext",
     "moduleResolution": "Bundler",
-    "jsx": "react-jsx",
     "strict": true,
     "noEmit": true,
-    "noUncheckedIndexedAccess": true,
-    "noImplicitOverride": true,
-    "noFallthroughCasesInSwitch": true,
-    "exactOptionalPropertyTypes": true,
-    "verbatimModuleSyntax": true,
-    "isolatedModules": true,
-    "resolveJsonModule": true,
     "skipLibCheck": true,
-    "types": ["vite/client"]
+    "verbatimModuleSyntax": true,
+    "isolatedModules": true
   },
-  "include": ["src", "rules-tests", "vite.config.ts", "vitest.rules.config.ts"]
+  "include": ["rules-tests", "vitest.rules.config.ts"]
 }

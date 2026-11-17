@@ -1,0 +1,43 @@
+// KSP generates XxxSchema.firebaseAISchema() from @Generable classes (on-device JSON needs it).
+// The app's root build.gradle doesn't put KSP/serialization on the classpath, so add them
+// here (same pattern expo-modules-core uses for the compose plugin). kotlinVersion/kspVersion
+// come from Expo's root-project plugin (app.json sets Kotlin 2.4.0, which firebase-ai-ondevice needs).
+buildscript {
+  repositories {
+    mavenCentral()
+    google()
+  }
+  dependencies {
+    classpath "com.google.devtools.ksp:com.google.devtools.ksp.gradle.plugin:${kspVersion}"
+    classpath "org.jetbrains.kotlin:kotlin-serialization:${kotlinVersion}"
+  }
+}
+
+apply plugin: 'com.android.library'
+apply plugin: 'expo-module-gradle-plugin'
+apply plugin: 'com.google.devtools.ksp'
+apply plugin: 'org.jetbrains.kotlin.plugin.serialization'
+
+group = 'expo.modules.hybridai'
+version = '0.1.0'
+
+android {
+  namespace "expo.modules.hybridai"
+  defaultConfig {
+    versionCode 1
+    versionName "0.1.0"
+    minSdkVersion 26 // firebase-ai-ondevice (ML Kit Prompt API) needs API 26+
+  }
+  lintOptions {
+    abortOnError false
+  }
+}
+
+dependencies {
+  // Pinned explicitly: firebase-ai-ondevice is NOT in the Firebase BoM.
+  implementation "com.google.firebase:firebase-ai:18.2.0"
+  implementation "com.google.firebase:firebase-ai-ondevice:16.0.0-beta08"
+  implementation "com.google.firebase:firebase-appcheck-debug:20.1.0"
+  ksp "com.google.firebase:firebase-ai-ksp-processor:17.0.0"
+  implementation "org.jetbrains.kotlinx:kotlinx-serialization-json:1.8.1"
+}

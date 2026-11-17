@@ -18,7 +18,7 @@ Gemini Nano grades every reply **privately on your device**; cloud Gemini does t
 [**Quick start**](#quick-start) ·
 [**How hybrid works**](#how-hybrid-inference-is-used) ·
 [**Contributing**](#contributing) ·
-[**Add a lesson**](lessons/README.md)
+[**Add a lesson**](packages/core/lessons/README.md)
 
 Live demo: *coming soon* · Demo video: *coming soon*
 
@@ -57,11 +57,11 @@ No account needed: you start as an anonymous guest.
 
 | What | File |
 | --- | --- |
-| Firebase app + App Check (reCAPTCHA Enterprise) | [`src/ai/firebase.ts`](src/ai/firebase.ts) |
-| Hybrid model factory (`InferenceMode`, `getGenerativeModel`) | [`src/ai/model.ts`](src/ai/model.ts) |
-| On-device model setup and download | [`src/ai/device.ts`](src/ai/device.ts) |
-| Routing policy: picks the inference mode per call | [`src/routing/route.ts`](src/routing/route.ts) |
-| Every AI capability wired into the app | [`src/services/app-services.ts`](src/services/app-services.ts) |
+| Firebase app + App Check (reCAPTCHA Enterprise) | [`packages/core/src/ai/firebase.ts`](packages/core/src/ai/firebase.ts) |
+| Hybrid model factory (`InferenceMode`, `getGenerativeModel`) | [`packages/core/src/ai/model.ts`](packages/core/src/ai/model.ts) |
+| On-device model setup and download | [`packages/core/src/ai/device.ts`](packages/core/src/ai/device.ts) |
+| Routing policy: picks the inference mode per call | [`packages/core/src/routing/route.ts`](packages/core/src/routing/route.ts) |
+| Every AI capability wired into the app | [`packages/core/src/services/app-services.ts`](packages/core/src/services/app-services.ts) |
 
 **Hackathon requirements at a glance**
 
@@ -69,7 +69,7 @@ No account needed: you start as an anonymous guest.
 | --- | --- |
 | Firebase AI Logic, imported and called at runtime | Files above |
 | Hybrid inference with Gemini Nano on Web (Chrome) | [How hybrid inference is used](#how-hybrid-inference-is-used) |
-| App Check | [`src/ai/firebase.ts`](src/ai/firebase.ts) |
+| App Check | [`packages/core/src/ai/firebase.ts`](packages/core/src/ai/firebase.ts) |
 | Other Firebase products | Authentication, Cloud Firestore (with emulator-tested rules), Hosting |
 | Open source license | [AGPL-3.0](LICENSE) |
 | Free to use, English UI | Yes |
@@ -80,7 +80,7 @@ Phrasebooks teach you "the pen is on the table". What you actually need is the o
 
 SceneSpeak turns that one situation into a five-minute role-play with a cute character in a low-poly 3D scene. Because you make a lot of mistakes while learning, the grading happens on your own device: private, instant and free.
 
-**Who it's for:** adult beginners (A1 to B1) preparing for travel, a move or a new job. Spanish today; more languages are welcome as [community lessons](lessons/README.md).
+**Who it's for:** adult beginners (A1 to B1) preparing for travel, a move or a new job. Spanish today; more languages are welcome as [community lessons](packages/core/lessons/README.md).
 
 ## Features
 
@@ -102,7 +102,7 @@ SceneSpeak turns that one situation into a five-minute role-play with a cute cha
 
 ## How hybrid inference is used
 
-All AI goes through [Firebase AI Logic](https://firebase.google.com/docs/ai-logic) (`firebase/ai`). A small, unit-tested [routing policy](src/routing/route.ts) picks the mode for each call from ordered rules: privacy, capability, language support, connectivity, input size and the state of the on-device model. Each decision carries a plain-language reason that shows up in the Model Monitor.
+All AI goes through [Firebase AI Logic](https://firebase.google.com/docs/ai-logic) (`firebase/ai`). A small, unit-tested [routing policy](packages/core/src/routing/route.ts) picks the mode for each call from ordered rules: privacy, capability, language support, connectivity, input size and the state of the on-device model. Each decision carries a plain-language reason that shows up in the Model Monitor.
 
 | Job | Runs on | Why |
 | --- | --- | --- |
@@ -160,6 +160,35 @@ pnpm dev
 ```
 
 Open http://localhost:5173.
+
+### Mobile app (Android, iOS, web)
+
+The Expo app in `apps/mobile` shares lessons, scenes, schemas, grading and routing with the web app. It has the 3D lessons in Typing and Speaking mode with character voices, Create a lesson, Community, Leaderboard, the Model Monitor, the welcome tour, and Privacy and Terms. AI calls on phones go through the native Firebase AI Logic bridge in `apps/mobile/modules/hybrid-ai`, which is still being connected; until then only exact example phrases are graded.
+
+```bash
+pnpm mobile                                       # Expo dev server; press w for web
+pnpm --filter @scenespeak/mobile android          # dev build on an Android device or emulator
+pnpm --filter @scenespeak/mobile ios              # dev build in the iOS simulator (needs Xcode)
+```
+
+For Firebase on mobile, create `apps/mobile/.env.local` with the same values as the web app, using the `EXPO_PUBLIC_FIREBASE_*` names: `API_KEY`, `AUTH_DOMAIN`, `PROJECT_ID`, `STORAGE_BUCKET`, `MESSAGING_SENDER_ID` and `APP_ID`. Without it the app runs offline. Native on-device AI also needs `google-services.json` (Android) and `GoogleService-Info.plist` (iOS) in `apps/mobile/`. Both are git-ignored.
+
+Google sign-in on mobile (optional) needs two more values in `apps/mobile/.env.local`:
+
+- `EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID`: the "Web client" OAuth ID that Firebase created (Authentication → Sign-in method → Google → Web SDK configuration).
+- `EXPO_PUBLIC_GOOGLE_IOS_URL_SCHEME`: the reversed iOS client ID from `GoogleService-Info.plist` (`REVERSED_CLIENT_ID`). For Android, add your debug and release SHA-1 fingerprints to the Android app in Firebase.
+
+After adding or changing native settings, regenerate the native projects with `pnpm --filter @scenespeak/mobile exec expo prebuild`, then rebuild.
+
+### Releases
+
+| Platform | How | Output |
+| --- | --- | --- |
+| Web | [`deploy.yml`](.github/workflows/deploy.yml): pull requests get a preview URL, `main` goes live on Firebase Hosting | `apps/web/dist/` |
+| Android | [`android-release.yml`](.github/workflows/android-release.yml): push a `v*` tag or run it from Actions | `SceneSpeak-<version>.apk` on the GitHub Release |
+| iOS Simulator | [`ios-simulator.yml`](.github/workflows/ios-simulator.yml): same triggers, no Apple Developer account needed | `SceneSpeak-simulator.zip` (unzip, drag the `.app` onto a simulator) |
+
+The Android APK is debug-signed unless the `ANDROID_UPLOAD_*` secrets are set; that's fine for sideloading, but Google Play needs the upload key. Both mobile workflows read the Firebase and Google sign-in values from the repository's Actions variables (listed at the top of each workflow).
 
 ## Full setup
 
@@ -224,7 +253,7 @@ Fill in the `VITE_FIREBASE_*` values, the App Check site key and (for developmen
 <details>
 <summary><b>7. Deploying (optional)</b></summary>
 
-Copy `.firebaserc.example` to `.firebaserc` (git-ignored) with your project ID, then use the Firebase CLI to deploy `dist/` to Hosting.
+Copy `.firebaserc.example` to `.firebaserc` (git-ignored) with your project ID, then use the Firebase CLI to deploy `apps/web/dist/` to Hosting.
 
 To deploy from GitHub instead, add the secrets and variable listed at the top of [`.github/workflows/deploy.yml`](.github/workflows/deploy.yml). Pull requests then get a preview URL, and pushes to `main` go live.
 
@@ -234,39 +263,44 @@ To deploy from GitHub instead, add the secrets and variable listed at the top of
 
 | Script | What it does |
 | --- | --- |
-| `pnpm dev` | Start the Vite dev server |
-| `pnpm build` | Typecheck, then build to `dist/` |
-| `pnpm typecheck` | `tsc --noEmit` |
-| `pnpm test` | Run the Vitest suite once (455 tests; also validates every lesson) |
+| `pnpm dev` | Start the web app (Vite) |
+| `pnpm mobile` | Start the Expo dev server for the Android, iOS and web app |
+| `pnpm build` | Typecheck, then build the web app to `apps/web/dist/` |
+| `pnpm typecheck` | `tsc --noEmit` in every package |
+| `pnpm test` | Run every package's Vitest suite (also validates every lesson) |
 | `pnpm test:rules` | Test `firestore.rules` against the Firestore emulator (21 tests; needs Java 21+) |
 
 ## Project structure
 
 ```
-src/
-  ai/          Firebase AI Logic client, prompts, parsers, App Check
-  routing/     On-device vs cloud routing policy
-  services/    Wires the real AI services (or stubs) into the UI
-  lesson/      Lesson flow, scoring, featured lessons, generator contract
-  library/     Shared lesson library (Firestore)
-  leaderboard/ Opt-in weekly board (Firestore)
-  auth/        Anonymous guest → Google
-  scene/       Asset catalog, scene recipes, composer, three.js player
-  audio/       Voice interfaces and push-to-talk recorder
-  monitor/     Model Monitor events and summary
-  onboarding/  Welcome tour and on-device setup
-  schemas/     Zod schemas for model output
-  ui/          React screens and components
-lessons/       Community lessons, one JSON file per lesson
-rules-tests/   Firestore security-rules tests (emulator)
-public/assets/ CC0 glTF models used by the catalog
+packages/core/       Shared TypeScript used by every app (no UI)
+  src/ai/            Firebase AI Logic client, prompts, parsers, App Check
+  src/routing/       On-device vs cloud routing policy
+  src/services/      Wires the real AI services (or stubs) into the UI
+  src/lesson/        Lesson flow, scoring, featured lessons, generator contract
+  src/library/       Shared lesson library (Firestore)
+  src/leaderboard/   Opt-in weekly board (Firestore)
+  src/auth/          Anonymous guest → Google
+  src/scene/         Asset catalog, scene recipes, composer, rooms and chibis
+  src/audio/         Voice interfaces
+  src/monitor/       Model Monitor events and summary
+  src/schemas/       Zod schemas for model output
+  lessons/           Community lessons, one JSON file per lesson
+apps/web/            Web app (Vite + React + three.js), the full feature set
+  public/assets/     CC0 glTF models used by the catalog
+apps/mobile/         Expo app for Android, iOS and web (React Native + React Three Fiber)
+  app/               Screens (Expo Router)
+  src/scene/         R3F scene player
+  src/ai-port/       Contract for native on-device AI
+  modules/hybrid-ai/ Native bridge to Firebase AI Logic (Android, iOS)
+rules-tests/         Firestore security-rules tests (emulator)
 ```
 
 ## Contributing
 
 Contributions are welcome, especially **new lessons in any language**.
 
-- **Add a lesson:** follow [`lessons/README.md`](lessons/README.md). It's one JSON file, `pnpm test` checks it, and a lesson mod reviews the pull request.
+- **Add a lesson:** follow [`packages/core/lessons/README.md`](packages/core/lessons/README.md). It's one JSON file, `pnpm test` checks it, and a lesson mod reviews the pull request.
 - **Code changes:** open an issue first for anything large, then a pull request using the [template](.github/pull_request_template.md).
 
 **Before you open a pull request**
@@ -282,7 +316,7 @@ pnpm typecheck && pnpm test && pnpm build
 - Tests sit next to the code (`foo.ts` + `foo.test.ts`) and never call real AI: inject fakes.
 - All AI goes through Firebase AI Logic (`firebase/ai`); no other AI SDKs.
 - No secrets in the repo, and never store images or voice recordings.
-- Keep the UI family-friendly and consistent with the tokens in [`src/ui/styles.css`](src/ui/styles.css).
+- Keep the UI family-friendly and consistent with the tokens in [`apps/web/src/ui/styles.css`](apps/web/src/ui/styles.css).
 
 By contributing you agree that your contribution is licensed under the [AGPL-3.0](LICENSE).
 
@@ -296,7 +330,7 @@ By contributing you agree that your contribution is licensed under the [AGPL-3.0
 
 ## Credits
 
-- 3D props: [KayKit Restaurant Bits](https://kaylousberg.itch.io/restaurant-bits) by [Kay Lousberg](https://kaylousberg.com) (CC0). License file in `public/assets/kaykit-restaurant/`.
+- 3D props: [KayKit Restaurant Bits](https://kaylousberg.itch.io/restaurant-bits) by [Kay Lousberg](https://kaylousberg.com) (CC0). License file in `apps/web/public/assets/kaykit-restaurant/`.
 - Fonts: [Fredoka](https://fonts.google.com/specimen/Fredoka) and [Nunito](https://fonts.google.com/specimen/Nunito) (SIL Open Font License), via Google Fonts.
 - Built with [Firebase](https://firebase.google.com), [three.js](https://threejs.org), [React](https://react.dev), [Vite](https://vite.dev) and [Zod](https://zod.dev).
 
