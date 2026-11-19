@@ -1,4 +1,5 @@
 import { notConnected } from "../services/not-connected";
+import type { RoomStyle } from "../scene/catalog/catalog-types";
 import type { Line, Scenario } from "../schemas";
 
 export interface SpeechRequest {
@@ -13,9 +14,17 @@ export interface SpeechRequest {
 /** Cloud TTS (Gemini, `responseModalities: ["AUDIO"]`) plugs in here. Returns playable audio. */
 export type SpeechSource = (request: SpeechRequest) => Promise<Blob>;
 
+/** What the painting must match: the 3D room in front of it. */
+export interface BackdropTheme {
+  room: RoomStyle;
+  /** The scene's sky gradient, top then bottom. */
+  gradient: readonly [string, string];
+}
+
 export interface BackdropRequest {
   cacheKey: string;
   setting: string;
+  theme: BackdropTheme;
   signal: AbortSignal;
 }
 

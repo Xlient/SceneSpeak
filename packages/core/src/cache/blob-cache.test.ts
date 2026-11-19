@@ -38,6 +38,7 @@ describe("cache keys", () => {
     expect(hashText("hola")).toBe(hashText("hola"));
     expect(hashText("hola")).not.toBe(hashText("hola!"));
     expect(speechCacheKey("lesson", "l1", "baker", "Hola")).not.toBe(speechCacheKey("lesson", "l1", "baker", "Adiós"));
-    expect(backdropCacheKey("lesson", "a bakery")).toMatch(/^backdrop:lesson:/);
+    expect(backdropCacheKey("lesson", "a bakery", "bakery")).toMatch(/^backdrop:v\d+:lesson:/);
+    expect(backdropCacheKey("lesson", "a bakery", "bakery")).not.toBe(backdropCacheKey("lesson", "a bakery", "shop"));
   });
 });

@@ -1,5 +1,7 @@
 import { type FormEvent, Suspense, lazy, useCallback, useEffect, useMemo, useReducer, useRef, useState } from "react";
 import { backdropCacheKey } from "@scenespeak/core/cache/blob-cache";
+import { sharedBackdropKey } from "@scenespeak/core/cache/shared-key";
+import { BACKDROP_MODEL } from "@scenespeak/core/services/live-backdrops";
 import { LESSON_MODES, type LessonMode, MODE_SETTINGS } from "@scenespeak/core/lesson/lesson-mode";
 import { characterAnimation, currentLine, initialLessonState, lessonReducer } from "@scenespeak/core/lesson/lesson-progress";
 import type { PlayableLesson } from "@scenespeak/core/lesson/playable-lesson";
@@ -33,10 +35,16 @@ const useBackdrop = (lesson: PlayableLesson): { url?: string } | undefined => {
   const { backdrops } = useServices();
   const { scenario } = lesson;
   const wanted = lesson.backdrop !== undefined && lesson.backdrop.url === undefined;
-  const key = backdropCacheKey(scenario.id, scenario.setting);
+  const { room, gradient } = lesson.manifest;
+  const key = backdropCacheKey(scenario.id, scenario.setting, room);
   const load = useCallback(
-    (signal: AbortSignal) => backdrops({ cacheKey: key, setting: scenario.setting, signal }),
-    [backdrops, key, scenario.setting],
+    async (signal: AbortSignal) => {
+      const theme = { room, gradient };
+      // Content-addressed, so the same scene is reused across lessons and users.
+      const cacheKey = await sharedBackdropKey({ setting: scenario.setting, theme, model: BACKDROP_MODEL });
+      return backdrops({ cacheKey, setting: scenario.setting, theme, signal });
+    },
+    [backdrops, key, scenario.setting, room, gradient],
   );
   const media = useGeneratedMedia(wanted ? load : null, key);
   if (!lesson.backdrop) return undefined;

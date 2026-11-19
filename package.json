@@ -14,7 +14,7 @@
     "build": "pnpm --filter @scenespeak/web build",
     "typecheck": "pnpm -r typecheck",
     "test": "pnpm -r test",
-    "test:rules": "firebase emulators:exec --only firestore --project demo-scenespeak \"vitest run --config vitest.rules.config.ts\""
+    "test:rules": "firebase emulators:exec --only firestore,storage --project demo-scenespeak \"vitest run --config vitest.rules.config.ts\""
   },
   "devDependencies": {
     "@firebase/rules-unit-testing": "6.0.0",
