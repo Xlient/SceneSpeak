@@ -1,5 +1,14 @@
 {
   "projects": {
     "default": "your-firebase-project-id"
+  },
+  "targets": {
+    "your-firebase-project-id": {
+      "hosting": { "app": ["your-hosting-site-id"] },
+      "storage": {
+        "backdrops": ["your-firebase-project-id-backdrops"],
+        "default": ["your-firebase-project-id.firebasestorage.app"]
+      }
+    }
   }
 }

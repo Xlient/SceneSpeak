@@ -1,7 +1,12 @@
 import { type DeviceModelStatus, hasPromptApi, initDeviceModel } from "../ai/device";
 import type { BackdropPainter, SpeechSource } from "../audio/media-sources";
 import { unavailableBackdrops, unavailableSpeech } from "../audio/media-sources";
+import { getFirebaseApp } from "../ai/firebase";
+import { readBackdropBucket } from "../cache/backdrop-bucket";
 import { type BlobStore, cachedBlobSource, createCacheStorageStore } from "../cache/blob-cache";
+import { createFirebaseBackdropPort } from "../cache/firebase-backdrop-port";
+import { layeredStore } from "../cache/layered-store";
+import { createSharedBackdropStore } from "../cache/shared-backdrop-store";
 import { type LessonGenerator, unavailableGenerator } from "../lesson/generator";
 import { createDefaultLibrary } from "../library/default-library";
 import { type LibraryStore, unavailableLibrary } from "../library/library";
@@ -12,6 +17,7 @@ import { type VoiceGrader, unavailableVoiceGrader } from "../lesson/voice-grader
 import { type DeviceStatusStore, createDeviceStatusStore } from "./device-status-store";
 import { createLiveGenerator } from "./live-generator";
 import { createLiveGrader } from "./live-grader";
+import { createLiveBackdropPainter } from "./live-backdrops";
 import { createLiveVoiceGrader } from "./live-voice-grader";
 import { createLiveCoach, createLiveExplainer } from "./live-helpers";
 import { type ModelMonitor, createModelMonitor, monitored } from "../monitor/model-monitor";
@@ -78,6 +84,7 @@ export const createLiveServices = (): RawServices => {
     deviceSetup,
     grader: createLiveGrader({ deviceStatus: deviceSetup.status.get }),
     voiceGrader: createLiveVoiceGrader(),
+    backdrops: createLiveBackdropPainter(),
     explainer: createLiveExplainer({ deviceStatus: deviceSetup.status.get }),
     coach: createLiveCoach({ deviceStatus: deviceSetup.status.get }),
     library,
@@ -90,9 +97,17 @@ export interface ServiceStores {
   backdrops: BlobStore;
 }
 
+/** Device cache first, then the shared bucket (when configured) so each scene is painted once for everyone. */
+const backdropStore = (): BlobStore => {
+  const local = createCacheStorageStore("scenespeak-backdrops-v1");
+  const bucket = readBackdropBucket(import.meta.env.VITE_FIREBASE_BACKDROP_BUCKET);
+  if (!bucket) return local;
+  return layeredStore(local, createSharedBackdropStore(createFirebaseBackdropPort(getFirebaseApp, bucket)));
+};
+
 const defaultStores = (): ServiceStores => ({
   speech: createCacheStorageStore("scenespeak-tts-v1"),
-  backdrops: createCacheStorageStore("scenespeak-backdrops-v1"),
+  backdrops: backdropStore(),
 });
 
 /** Adds monitoring to every call and generate-once caching to cloud media (TTS clips, backdrops). */

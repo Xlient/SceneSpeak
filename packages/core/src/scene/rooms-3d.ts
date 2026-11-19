@@ -1,19 +1,6 @@
 import * as THREE from "three";
 import type { RoomStyle } from "./catalog/catalog-types";
-
-interface RoomPalette {
-  floor: number;
-  wall: number;
-  sideWall: number;
-  trim: number;
-  accent: number;
-}
-
-const PALETTES: Record<RoomStyle, RoomPalette> = {
-  workshop: { floor: 0xc9a77c, wall: 0xf3e6d3, sideWall: 0xead7bd, trim: 0x9b6b43, accent: 0x8fb8d8 },
-  bakery: { floor: 0xe7c9a9, wall: 0xffe4ea, sideWall: 0xffd6de, trim: 0xd98c6a, accent: 0xffd970 },
-  shop: { floor: 0xd8cfc0, wall: 0xe3f4ec, sideWall: 0xd3ecf6, trim: 0x8a9bb5, accent: 0xc9b6f2 },
-};
+import { ROOM_PALETTES } from "./room-palettes";
 
 const box = (size: THREE.Vector3Tuple, color: number, position: THREE.Vector3Tuple): THREE.Mesh => {
   const mesh = new THREE.Mesh(new THREE.BoxGeometry(...size), new THREE.MeshLambertMaterial({ color, flatShading: true }));
@@ -27,7 +14,7 @@ export interface RoomOptions {
 }
 
 export const createRoom = (style: RoomStyle, { backWall }: RoomOptions): THREE.Group => {
-  const p = PALETTES[style];
+  const p = ROOM_PALETTES[style];
   const group = new THREE.Group();
   group.name = `room-${style}`;
   group.add(box([9, 0.1, 7], p.floor, [0, -0.05, -0.5]));

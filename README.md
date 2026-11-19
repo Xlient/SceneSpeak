@@ -70,7 +70,7 @@ No account needed: you start as an anonymous guest.
 | Firebase AI Logic, imported and called at runtime | Files above |
 | Hybrid inference with Gemini Nano on Web (Chrome) | [How hybrid inference is used](#how-hybrid-inference-is-used) |
 | App Check | [`packages/core/src/ai/firebase.ts`](packages/core/src/ai/firebase.ts) |
-| Other Firebase products | Authentication, Cloud Firestore (with emulator-tested rules), Hosting |
+| Other Firebase products | Authentication, Cloud Firestore and Cloud Storage (with emulator-tested rules), Hosting |
 | Open source license | [AGPL-3.0](LICENSE) |
 | Free to use, English UI | Yes |
 
@@ -95,10 +95,11 @@ SceneSpeak turns that one situation into a five-minute role-play with a cute cha
 | ⭐ | **Progress:** stars, points, streaks and phrases to review, kept in your browser | Local |
 | 🧑‍🏫 | **Weekly coach** that reads your stats without them leaving the device | Device only |
 | 🏆 | **Weekly leaderboard** (opt-in): only a first name and days practised | Firestore |
+| 🎨 | **AI-painted backdrops** matched to the room's colours, painted once and shared through a cache | Cloud + Storage |
 | 📊 | **Model Monitor:** path, latency and routing reason for every AI call | — |
 | 👋 | **Welcome tour** that sets up on-device AI, plus Privacy and Terms pages | — |
 
-**Next:** cloud character voices (the player and cache are built), AI-painted backdrops (the UI and gradient fallback are built), more languages, and a mobile app.
+**Next:** cloud character voices (the player and cache are built), more languages, and a mobile app.
 
 ## How hybrid inference is used
 
@@ -251,7 +252,21 @@ Fill in the `VITE_FIREBASE_*` values, the App Check site key and (for developmen
 </details>
 
 <details>
-<summary><b>7. Deploying (optional)</b></summary>
+<summary><b>7. AI backdrops and shared cache (optional)</b></summary>
+
+Painted backdrops use an image model, which needs the **Gemini API paid tier** (image models have no free tier). Without it, scenes keep their gradient sky.
+
+Backdrops are cached in the browser and, with Cloud Storage set up, shared between all players so each scene is painted once. They use their own bucket, not the default one:
+
+1. In **Storage**, click **Get Started** (creates the default bucket, which the rules keep closed).
+2. Create a bucket for backdrops and link it to Firebase (Storage → **Add bucket**, or `gcloud storage buckets create gs://YOUR-PROJECT-backdrops --location us-east1 --uniform-bucket-level-access --public-access-prevention`, then import it in the console).
+3. Map the storage targets (`pnpm exec firebase target:apply storage backdrops YOUR-PROJECT-backdrops` and `… storage default YOUR-PROJECT.firebasestorage.app`, see `.firebaserc.example`), set `VITE_FIREBASE_BACKDROP_BUCKET` in `.env.local`, and deploy: `pnpm exec firebase deploy --only storage,firestore`.
+4. Allow browser downloads from your domains: `gcloud storage buckets update gs://YOUR-PROJECT-backdrops --cors-file=cors.json`.
+
+</details>
+
+<details>
+<summary><b>8. Deploying (optional)</b></summary>
 
 Copy `.firebaserc.example` to `.firebaserc` (git-ignored) with your project ID, then use the Firebase CLI to deploy `apps/web/dist/` to Hosting.
 
@@ -268,7 +283,7 @@ To deploy from GitHub instead, add the secrets and variable listed at the top of
 | `pnpm build` | Typecheck, then build the web app to `apps/web/dist/` |
 | `pnpm typecheck` | `tsc --noEmit` in every package |
 | `pnpm test` | Run every package's Vitest suite (also validates every lesson) |
-| `pnpm test:rules` | Test `firestore.rules` against the Firestore emulator (21 tests; needs Java 21+) |
+| `pnpm test:rules` | Test `firestore.rules` and `storage.rules` against the emulators (needs Java 21+) |
 
 ## Project structure
 

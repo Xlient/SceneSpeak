@@ -68,4 +68,7 @@ export const hashText = (text: string): string => {
 export const speechCacheKey = (lessonId: string, lineId: string, characterId: string, text: string): string =>
   `tts:${lessonId}:${lineId}:${characterId}:${hashText(text)}`;
 
-export const backdropCacheKey = (lessonId: string, setting: string): string => `backdrop:${lessonId}:${hashText(setting)}`;
+/** Bump BACKDROP_STYLE_VERSION when the backdrop prompt changes, so old paintings are replaced. */
+export const BACKDROP_STYLE_VERSION = 2;
+export const backdropCacheKey = (lessonId: string, setting: string, room: string): string =>
+  `backdrop:v${BACKDROP_STYLE_VERSION}:${lessonId}:${hashText(`${room}|${setting}`)}`;
