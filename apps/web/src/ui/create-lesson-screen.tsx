@@ -187,7 +187,7 @@ export const CreateLessonScreen = ({ onReady, onPlayLibrary, onCancel }: CreateL
             })}
             <li className="step pending">
               <span className="step-mark" aria-hidden="true">
-                4
+                {STEPS.length + 1}
               </span>
               <span>
                 Painting the backdrop, while you play <span className="badge cloud">Cloud</span>
