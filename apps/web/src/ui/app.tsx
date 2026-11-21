@@ -137,15 +137,15 @@ const Shell = ({ authClient }: { authClient: AuthClient | null }) => {
               <CommunityScreen
                 lessons={COMMUNITY_LESSONS}
                 onPlay={play}
-                library={
+                library={(filter) => (
                   <LibrarySection
                     auth={session.status}
-                    language={null}
+                    filter={filter}
                     onPlay={(entry: LibraryEntry) => void playLibrary(entry.id)}
                     onCreate={() => setScreen({ kind: "create" })}
                     onSignIn={session.enabled ? session.signInWithGoogle : undefined}
                   />
-                }
+                )}
               />
             )}
             {screen.kind === "page" && screen.page === "leaderboard" && (

@@ -4,6 +4,8 @@ import type { LessonMode } from "@scenespeak/core/lesson/lesson-mode";
 
 import { languageName } from "@scenespeak/core/language/languages";
 
+import { LessonLanguageMeta } from "./language-badges";
+
 export { languageName };
 
 export const LessonCard = ({ lesson, onPlay, credit }: { lesson: FeaturedLesson; onPlay: (lesson: FeaturedLesson, mode: LessonMode) => void; credit?: string }) => (
@@ -13,9 +15,7 @@ export const LessonCard = ({ lesson, onPlay, credit }: { lesson: FeaturedLesson;
     </span>
     <h3>{lesson.scenario.title}</h3>
     <p>{lesson.blurb}</p>
-    <p className="pill small-pill">
-      {languageName(lesson.scenario.language)} · {lesson.scenario.level}
-    </p>
+    <LessonLanguageMeta language={lesson.scenario.language} level={lesson.scenario.level} />
     {credit && <p className="lesson-credit">{credit}</p>}
     <div className="lesson-play-buttons">
       <button type="button" onClick={() => onPlay(lesson, "typing")} aria-label={`Play ${lesson.scenario.title}`}>

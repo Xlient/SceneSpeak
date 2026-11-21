@@ -1,20 +1,24 @@
 import type { LoadedCommunityLesson } from "@scenespeak/core/lesson/community/community-lesson";
 import { contributors } from "@scenespeak/core/lesson/community/contributors";
 import type { FeaturedLesson } from "@scenespeak/core/lesson/featured/featured-lessons";
-import type { ReactNode } from "react";
+import { type ReactNode, useState } from "react";
+import { type LanguageFilter, languageFilterOptions, matchesLanguage } from "@scenespeak/core/language/language-filter";
 import type { LessonMode } from "@scenespeak/core/lesson/lesson-mode";
 import { LessonCard, languageName } from "./home-screen";
+import { LanguageFilterChips } from "./language-badges";
 import { LESSON_GUIDE_URL } from "./links";
 
 export interface CommunityScreenProps {
   lessons: readonly LoadedCommunityLesson[];
   onPlay: (lesson: FeaturedLesson, mode: LessonMode) => void;
-  /** The shared lesson library, shown above the reviewed community lessons. */
-  library?: ReactNode;
+  /** The shared lesson library for the chosen language, shown above the reviewed community lessons. */
+  library?: (filter: LanguageFilter) => ReactNode;
 }
 
 export const CommunityScreen = ({ lessons, onPlay, library }: CommunityScreenProps) => {
   const people = contributors(lessons);
+  const [filter, setFilter] = useState<LanguageFilter>(null);
+  const shown = lessons.filter((lesson) => matchesLanguage(lesson.scenario.language, filter));
   return (
     <section className="page" aria-labelledby="community-title">
       <div className="page-header">
@@ -22,14 +26,16 @@ export const CommunityScreen = ({ lessons, onPlay, library }: CommunityScreenPro
         <p>Lessons written by learners and teachers around the world, checked by our mods before they go live.</p>
       </div>
 
-      {library}
+      <LanguageFilterChips options={languageFilterOptions(lessons.map((l) => l.scenario.language))} value={filter} onChange={setFilter} />
+
+      {library?.(filter)}
 
       <h3 className="section-title">Reviewed community lessons</h3>
-      {lessons.length === 0 ? (
-        <p>No community lessons yet. Be the first!</p>
+      {shown.length === 0 ? (
+        <p>{filter ? `No reviewed ${languageName(filter)} lessons yet. Write one!` : "No community lessons yet. Be the first!"}</p>
       ) : (
         <ul className="lesson-grid">
-          {lessons.map((lesson) => (
+          {shown.map((lesson) => (
             <LessonCard key={lesson.path} lesson={lesson} onPlay={onPlay} credit={`By ${lesson.authors.join(", ")}`} />
           ))}
         </ul>

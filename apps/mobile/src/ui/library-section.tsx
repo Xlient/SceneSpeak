@@ -1,5 +1,7 @@
 import { useState } from "react";
 import { StyleSheet, Text, TextInput, View } from "react-native";
+import { type LanguageFilter, matchesLanguage } from "@scenespeak/core/language/language-filter";
+import { languageName } from "@scenespeak/core/language/languages";
 import type { LibraryEntry } from "@scenespeak/core/library/library";
 import { useAuthState } from "../auth/auth-context";
 import { library } from "../services/app-services";
@@ -14,19 +16,19 @@ const matches = (entry: LibraryEntry, query: string) => {
 };
 
 export interface LibrarySectionProps {
-  /** null lists every language. */
-  language: string | null;
+  /** Shown languages; null shows every language. Filtered here, so changing it doesn't reload the library. */
+  filter: LanguageFilter;
   onPlay: (entry: LibraryEntry) => void;
   onCreate: () => void;
 }
 
 /** Shared lessons people made with "Create a lesson", most upvoted first. */
-export const LibrarySection = ({ language, onPlay, onCreate }: LibrarySectionProps) => {
+export const LibrarySection = ({ filter, onPlay, onCreate }: LibrarySectionProps) => {
   const { status } = useAuthState();
-  const { state, voted, canVote, toggleVote, report, notice } = useLibrary(library, status, language);
+  const { state, voted, canVote, toggleVote, report, notice } = useLibrary(library, status, null);
   const [query, setQuery] = useState("");
   const [confirming, setConfirming] = useState<string | null>(null);
-  const entries = state.status === "ready" ? state.entries.filter((e) => matches(e, query)) : [];
+  const entries = state.status === "ready" ? state.entries.filter((e) => matchesLanguage(e.language, filter) && matches(e, query)) : [];
 
   return (
     <View style={styles.section}>
@@ -55,7 +57,7 @@ export const LibrarySection = ({ language, onPlay, onCreate }: LibrarySectionPro
       {state.status === "failed" && <Text style={styles.error}>{state.message}</Text>}
       {state.status === "ready" && entries.length === 0 && (
         <View style={styles.empty}>
-          <Text style={styles.text}>{query ? "No lessons match that search." : "No shared lessons yet."}</Text>
+          <Text style={styles.text}>{query ? "No lessons match that search." : filter ? `No shared ${languageName(filter)} lessons yet.` : "No shared lessons yet."}</Text>
           <ToyButton label="Create one" tint={color.butter} onPress={onCreate} />
         </View>
       )}

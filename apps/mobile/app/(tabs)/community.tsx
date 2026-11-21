@@ -6,20 +6,25 @@ import { contributors } from "@scenespeak/core/lesson/community/contributors";
 import { type LibraryEntry, parseLibraryLesson } from "@scenespeak/core/library/library";
 import { NotConnectedError } from "@scenespeak/core/services/not-connected";
 import { COMMUNITY_LESSONS } from "../../src/lessons/community";
-import { languageName } from "../../src/polyfills/intl-display-names";
+import { type LanguageFilter, languageFilterOptions, matchesLanguage } from "@scenespeak/core/language/language-filter";
+import { languageName } from "@scenespeak/core/language/languages";
 import { library } from "../../src/services/app-services";
 import { rememberLesson } from "../../src/services/lesson-store";
 import { color, outline, radius, tintAt } from "../../src/theme/tokens";
+import { LanguageFilterChips } from "../../src/ui/language-filter-chips";
 import { LessonCard } from "../../src/ui/lesson-card";
 import { LibrarySection } from "../../src/ui/library-section";
 import { ToyButton } from "../../src/ui/toy-button";
 
+const FILTER_OPTIONS = languageFilterOptions(COMMUNITY_LESSONS.map((lesson) => lesson.scenario.language));
 const LESSON_GUIDE_URL = "https://github.com/Xlient/SceneSpeak/blob/main/packages/core/lessons/README.md";
 
 export default function CommunityScreen() {
   const router = useRouter();
   const [playError, setPlayError] = useState<string | null>(null);
   const people = contributors(COMMUNITY_LESSONS);
+  const [filter, setFilter] = useState<LanguageFilter>(null);
+  const shown = COMMUNITY_LESSONS.filter((lesson) => matchesLanguage(lesson.scenario.language, filter));
   const open = (id: string) => router.push({ pathname: "/lesson/[id]", params: { id } });
 
   const playLibrary = async (entry: LibraryEntry) => {
@@ -36,7 +41,9 @@ export default function CommunityScreen() {
     <ScrollView contentContainerStyle={styles.page}>
       <Text style={styles.lead}>Lessons written by learners and teachers around the world, checked by our mods before they go live.</Text>
 
-      <LibrarySection language={null} onPlay={(entry) => void playLibrary(entry)} onCreate={() => router.push("/create")} />
+      <LanguageFilterChips options={FILTER_OPTIONS} value={filter} onChange={setFilter} />
+
+      <LibrarySection filter={filter} onPlay={(entry) => void playLibrary(entry)} onCreate={() => router.push("/create")} />
       {playError ? (
         <Text style={styles.error} accessibilityRole="alert">
           {playError}
@@ -46,10 +53,10 @@ export default function CommunityScreen() {
       <Text style={styles.title} accessibilityRole="header">
         Reviewed community lessons
       </Text>
-      {COMMUNITY_LESSONS.length === 0 ? (
-        <Text style={styles.text}>No community lessons yet. Be the first!</Text>
+      {shown.length === 0 ? (
+        <Text style={styles.text}>{filter ? `No reviewed ${languageName(filter)} lessons yet. Write one!` : "No community lessons yet. Be the first!"}</Text>
       ) : (
-        COMMUNITY_LESSONS.map((lesson, index) => (
+        shown.map((lesson, index) => (
           <LessonCard
             key={lesson.path}
             title={lesson.scenario.title}
@@ -78,7 +85,7 @@ export default function CommunityScreen() {
               </View>
               <Text style={styles.text}>
                 <Text style={styles.strong}>@{person.username}</Text> · {person.lessons} {person.lessons === 1 ? "lesson" : "lessons"} ·{" "}
-                {person.languages.map((code) => languageName(code) ?? code).join(", ")}
+                {person.languages.map(languageName).join(", ")}
               </Text>
             </View>
           ))
