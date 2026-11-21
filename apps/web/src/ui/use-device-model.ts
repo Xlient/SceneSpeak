@@ -6,7 +6,14 @@ export const useDeviceModel = () => {
   const status = useSyncExternalStore(deviceSetup.status.subscribe, deviceSetup.status.get);
   const controller = useRef<AbortController | null>(null);
 
-  useEffect(() => () => controller.current?.abort(), []);
+  useEffect(() => {
+    const resume = new AbortController();
+    void deviceSetup.resume({ signal: resume.signal });
+    return () => {
+      resume.abort();
+      controller.current?.abort();
+    };
+  }, [deviceSetup]);
 
   // Must run straight from the click: Chrome only downloads the model with user activation.
   const setUp = useCallback(() => {

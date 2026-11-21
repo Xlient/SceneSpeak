@@ -1,4 +1,4 @@
-import { type DeviceModelStatus, hasPromptApi, initDeviceModel } from "../ai/device";
+import { hasPromptApi, initDeviceModel } from "../ai/device";
 import type { BackdropPainter, SpeechSource } from "../audio/media-sources";
 import { unavailableBackdrops, unavailableSpeech } from "../audio/media-sources";
 import { getFirebaseApp } from "../ai/firebase";
@@ -14,7 +14,8 @@ import { type SentenceExplainer, unavailableExplainer } from "../lesson/sentence
 import { type PracticeCoach, unavailableCoach } from "../progress/coach";
 import { type Grader, unavailableGrader } from "../lesson/grader";
 import { type VoiceGrader, unavailableVoiceGrader } from "../lesson/voice-grader";
-import { type DeviceStatusStore, createDeviceStatusStore } from "./device-status-store";
+import { type DeviceSetup, createDeviceSetup, createSetupMemory } from "./device-setup";
+import { createDeviceStatusStore } from "./device-status-store";
 import { createLiveGenerator } from "./live-generator";
 import { createLiveGrader } from "./live-grader";
 import { createLiveBackdropPainter } from "./live-backdrops";
@@ -22,16 +23,20 @@ import { createLiveVoiceGrader } from "./live-voice-grader";
 import { createLiveCoach, createLiveExplainer } from "./live-helpers";
 import { type ModelMonitor, createModelMonitor, monitored } from "../monitor/model-monitor";
 
-export interface DeviceSetup {
-  status: DeviceStatusStore;
-  /** Starts setup; must be called straight from a click. Progress lands in `status`. */
-  initialize: (options?: { signal?: AbortSignal }) => Promise<DeviceModelStatus>;
-}
+export type { DeviceSetup } from "./device-setup";
+
+const browserStorage = (): Storage | undefined => {
+  try {
+    return globalThis.localStorage;
+  } catch {
+    return undefined;
+  }
+};
 
 /** Real setup even in stub mode: it reports "not-supported" or "unavailable" on its own when it can't run. */
 export const createBrowserDeviceSetup = (): DeviceSetup => {
   const status = createDeviceStatusStore(hasPromptApi() ? { kind: "idle" } : { kind: "not-supported" });
-  return { status, initialize: (options) => initDeviceModel(status.set, options) };
+  return createDeviceSetup(status, (onStatus, options) => initDeviceModel(onStatus, options), createSetupMemory(browserStorage()));
 };
 
 /** Every AI-backed capability the UI uses. Real implementations replace the stubs in `createAppServices`. */

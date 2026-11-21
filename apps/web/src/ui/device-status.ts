@@ -14,7 +14,7 @@ export interface DeviceStatusView {
 export const describeDeviceStatus = (status: DeviceModelStatus): DeviceStatusView => {
   switch (status.kind) {
     case "idle":
-      return { label: "On-device AI: not set up", tone: "off", action: "Set up" };
+      return { label: "On-device AI: off", tone: "off", action: "Set up" };
     case "not-supported":
       return { label: "On-device AI: not in this browser (using cloud)", tone: "off" };
     case "checking":
