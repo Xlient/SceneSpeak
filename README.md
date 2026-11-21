@@ -9,18 +9,17 @@ Gemini Nano grades every reply **privately on your device**; cloud Gemini does t
 
 [![CI](https://github.com/Xlient/SceneSpeak/actions/workflows/ci.yml/badge.svg)](https://github.com/Xlient/SceneSpeak/actions/workflows/ci.yml)
 [![License: AGPL-3.0](https://img.shields.io/badge/license-AGPL--3.0-blue.svg)](LICENSE)
-[![Tests](https://img.shields.io/badge/tests-455%20unit%20%2B%2021%20rules-brightgreen.svg)](#scripts)
+[![Tests](https://img.shields.io/badge/tests-589%20unit%20%2B%2021%20rules-brightgreen.svg)](#scripts)
 [![TypeScript strict](https://img.shields.io/badge/TypeScript-strict-3178C6.svg?logo=typescript&logoColor=white)](tsconfig.json)
 [![Firebase AI Logic](https://img.shields.io/badge/Firebase-AI%20Logic%20hybrid-FFCA28.svg?logo=firebase&logoColor=black)](https://firebase.google.com/docs/ai-logic)
-[![#BuildHybridAI 2026](https://img.shields.io/badge/%23BuildHybridAI-2026-4285F4.svg)](https://firebasehybridaihackathon.devpost.com/)
 
-[**For judges**](#for-judges) ·
+[**Try it**](#try-it) ·
 [**Quick start**](#quick-start) ·
 [**How hybrid works**](#how-hybrid-inference-is-used) ·
 [**Contributing**](#contributing) ·
 [**Add a lesson**](packages/core/lessons/README.md)
 
-Live demo: *coming soon* · Demo video: *coming soon*
+**[Open SceneSpeak](https://scenespeak-12331.web.app)**
 
 </div>
 
@@ -28,7 +27,7 @@ Live demo: *coming soon* · Demo video: *coming soon*
 
 ## Contents
 
-- [For judges](#for-judges)
+- [Try it](#try-it)
 - [Why SceneSpeak](#why-scenespeak)
 - [Features](#features)
 - [How hybrid inference is used](#how-hybrid-inference-is-used)
@@ -42,37 +41,14 @@ Live demo: *coming soon* · Demo video: *coming soon*
 - [Credits](#credits)
 - [License](#license)
 
-## For judges
+## Try it
 
-**Try it in about two minutes**
-
-1. Open the live demo in desktop **Chrome 139+** (or [run it locally](#quick-start)).
+1. Open [SceneSpeak](https://scenespeak-12331.web.app) in desktop **Chrome 139+** (or [run it locally](#quick-start)).
 2. Optional, for on-device AI: enable `chrome://flags/#prompt-api-for-gemini-nano-multimodal-input` and restart Chrome. The welcome tour downloads Gemini Nano after one click. Without it everything still works and grades in the cloud.
 3. Play **Coffee at the café**, then tap **Create** and type a situation of your own.
 4. Open the **Model Monitor** to see where every AI call ran, why, and how many cloud calls were saved.
 
-No account needed: you start as an anonymous guest.
-
-**Where Firebase AI Logic runs in the code**
-
-| What | File |
-| --- | --- |
-| Firebase app + App Check (reCAPTCHA Enterprise) | [`packages/core/src/ai/firebase.ts`](packages/core/src/ai/firebase.ts) |
-| Hybrid model factory (`InferenceMode`, `getGenerativeModel`) | [`packages/core/src/ai/model.ts`](packages/core/src/ai/model.ts) |
-| On-device model setup and download | [`packages/core/src/ai/device.ts`](packages/core/src/ai/device.ts) |
-| Routing policy: picks the inference mode per call | [`packages/core/src/routing/route.ts`](packages/core/src/routing/route.ts) |
-| Every AI capability wired into the app | [`packages/core/src/services/app-services.ts`](packages/core/src/services/app-services.ts) |
-
-**Hackathon requirements at a glance**
-
-| Requirement | Where |
-| --- | --- |
-| Firebase AI Logic, imported and called at runtime | Files above |
-| Hybrid inference with Gemini Nano on Web (Chrome) | [How hybrid inference is used](#how-hybrid-inference-is-used) |
-| App Check | [`packages/core/src/ai/firebase.ts`](packages/core/src/ai/firebase.ts) |
-| Other Firebase products | Authentication, Cloud Firestore and Cloud Storage (with emulator-tested rules), Hosting |
-| Open source license | [AGPL-3.0](LICENSE) |
-| Free to use, English UI | Yes |
+No account needed: you start as an anonymous guest. SceneSpeak is free.
 
 ## Why SceneSpeak
 
@@ -99,7 +75,7 @@ SceneSpeak turns that one situation into a five-minute role-play with a cute cha
 | 📊 | **Model Monitor:** path, latency and routing reason for every AI call | — |
 | 👋 | **Welcome tour** that sets up on-device AI, plus Privacy and Terms pages | — |
 
-**Next:** cloud character voices (the player and cache are built), more on-device languages as Chrome adds them, and a mobile app.
+**Roadmap:** cloud character voices and more on-device languages as Chrome adds them.
 
 ## How hybrid inference is used
 
@@ -117,6 +93,18 @@ All AI goes through [Firebase AI Logic](https://firebase.google.com/docs/ai-logi
 | Offline with Nano ready | **Device only** | Practice keeps working without Wi-Fi |
 
 **Model output is untrusted.** Every response is validated with Zod, and a reply grade with invalid JSON is retried once. Generated lessons only use room, character and prop IDs from the asset catalog, get one repair attempt if invalid, and are laid out by a pure, tested scene composer, so the model never invents geometry. Personal details are removed from lesson requests before any model sees them.
+
+**Where it lives in the code**
+
+| What | File |
+| --- | --- |
+| Firebase app + App Check (reCAPTCHA Enterprise) | [`packages/core/src/ai/firebase.ts`](packages/core/src/ai/firebase.ts) |
+| Hybrid model factory (`InferenceMode`, `getGenerativeModel`) | [`packages/core/src/ai/model.ts`](packages/core/src/ai/model.ts) |
+| On-device model setup and download | [`packages/core/src/ai/device.ts`](packages/core/src/ai/device.ts) |
+| Routing policy: picks the inference mode per call | [`packages/core/src/routing/route.ts`](packages/core/src/routing/route.ts) |
+| Every AI capability wired into the app | [`packages/core/src/services/app-services.ts`](packages/core/src/services/app-services.ts) |
+
+Other Firebase products: Authentication, Cloud Firestore and Cloud Storage (with emulator-tested rules), and Hosting.
 
 ## Architecture
 
@@ -164,7 +152,14 @@ Open http://localhost:5173.
 
 ### Mobile app (Android, iOS, web)
 
-The Expo app in `apps/mobile` shares lessons, scenes, schemas, grading and routing with the web app. It has the 3D lessons in Typing and Speaking mode with character voices, Create a lesson, Community, Leaderboard, the Model Monitor, the welcome tour, and Privacy and Terms. AI calls on phones go through the native Firebase AI Logic bridge in `apps/mobile/modules/hybrid-ai`, which is still being connected; until then only exact example phrases are graded.
+The Expo app in `apps/mobile` shares lessons, scenes, schemas, grading and routing with the web app. It has the 3D lessons in Typing and Speaking mode with character voices, Create a lesson, Community, Leaderboard, the Model Monitor, the welcome tour, and Privacy and Terms. AI calls on phones go through the native Firebase AI Logic bridge in `apps/mobile/modules/hybrid-ai`, with the same routing policy as the web app:
+
+| Platform | On device | Cloud fallback |
+| --- | --- | --- |
+| Android | Gemini Nano via `firebase-ai-ondevice` (ML Kit Prompt API, [supported phones](https://developers.google.com/ml-kit/genai#prompt-device)) | Gemini |
+| iOS | Apple Foundation Models via `FirebaseAILogic` hybrid inference (Apple Intelligence on, including the Simulator on an Apple Intelligence Mac) | Gemini |
+
+**Try it without building:** download the Android APK or the iOS Simulator build from the [latest release](https://github.com/Xlient/SceneSpeak/releases/latest). To install the simulator build, unzip it and drag `SceneSpeak.app` onto a booted simulator.
 
 ```bash
 pnpm mobile                                       # Expo dev server; press w for web
@@ -172,7 +167,7 @@ pnpm --filter @scenespeak/mobile android          # dev build on an Android devi
 pnpm --filter @scenespeak/mobile ios              # dev build in the iOS simulator (needs Xcode)
 ```
 
-For Firebase on mobile, create `apps/mobile/.env.local` with the same values as the web app, using the `EXPO_PUBLIC_FIREBASE_*` names: `API_KEY`, `AUTH_DOMAIN`, `PROJECT_ID`, `STORAGE_BUCKET`, `MESSAGING_SENDER_ID` and `APP_ID`. Without it the app runs offline. Native on-device AI also needs `google-services.json` (Android) and `GoogleService-Info.plist` (iOS) in `apps/mobile/`. Both are git-ignored.
+For Firebase on mobile, create `apps/mobile/.env.local` with the same values as the web app, using the `EXPO_PUBLIC_FIREBASE_*` names: `API_KEY`, `AUTH_DOMAIN`, `PROJECT_ID`, `STORAGE_BUCKET`, `MESSAGING_SENDER_ID` and `APP_ID`. Without it the app runs offline. Native AI also needs `google-services.json` (Android) and `GoogleService-Info.plist` (iOS) in `apps/mobile/`, from the Android and iOS apps registered in your Firebase project (bundle ID `dev.scenespeak.app`). Both files are git-ignored. Debug builds use the App Check debug provider: register the token they log under App Check → Apps → Manage debug tokens.
 
 Google sign-in on mobile (optional) needs two more values in `apps/mobile/.env.local`:
 
@@ -189,7 +184,7 @@ After adding or changing native settings, regenerate the native projects with `p
 | Android | [`android-release.yml`](.github/workflows/android-release.yml): push a `v*` tag or run it from Actions | `SceneSpeak-<version>.apk` on the GitHub Release |
 | iOS Simulator | [`ios-simulator.yml`](.github/workflows/ios-simulator.yml): same triggers, no Apple Developer account needed | `SceneSpeak-simulator.zip` (unzip, drag the `.app` onto a simulator) |
 
-The Android APK is debug-signed unless the `ANDROID_UPLOAD_*` secrets are set; that's fine for sideloading, but Google Play needs the upload key. Both mobile workflows read the Firebase and Google sign-in values from the repository's Actions variables (listed at the top of each workflow).
+The Android APK is debug-signed unless the `ANDROID_UPLOAD_*` secrets are set; that's fine for sideloading, but Google Play needs the upload key. Both mobile workflows read the Firebase and Google sign-in values from the repository's Actions variables and the native config files from secrets (listed at the top of each workflow). Sideloaded APKs and simulator builds can't pass Play Integrity or App Attest, so release test builds carry an App Check debug token from the `SCENESPEAK_APPCHECK_DEBUG_TOKEN` secret; revoke it in the Firebase console when the test period ends.
 
 ## Full setup
 
