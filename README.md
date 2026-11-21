@@ -80,7 +80,7 @@ Phrasebooks teach you "the pen is on the table". What you actually need is the o
 
 SceneSpeak turns that one situation into a five-minute role-play with a cute character in a low-poly 3D scene. Because you make a lot of mistakes while learning, the grading happens on your own device: private, instant and free.
 
-**Who it's for:** adult beginners (A1 to B1) preparing for travel, a move or a new job. Spanish today; more languages are welcome as [community lessons](packages/core/lessons/README.md).
+**Who it's for:** adult beginners (A1 to B1) preparing for travel, a move or a new job. Create lessons in Spanish, French, German and Japanese (graded on-device by Gemini Nano where Chrome supports it), or Italian, Portuguese, Korean and Chinese (graded in the cloud). Featured lessons are Spanish, plus one Japanese starter; more languages are welcome as [community lessons](packages/core/lessons/README.md).
 
 ## Features
 
@@ -99,7 +99,7 @@ SceneSpeak turns that one situation into a five-minute role-play with a cute cha
 | 📊 | **Model Monitor:** path, latency and routing reason for every AI call | — |
 | 👋 | **Welcome tour** that sets up on-device AI, plus Privacy and Terms pages | — |
 
-**Next:** cloud character voices (the player and cache are built), more languages, and a mobile app.
+**Next:** cloud character voices (the player and cache are built), more on-device languages as Chrome adds them, and a mobile app.
 
 ## How hybrid inference is used
 

@@ -27,19 +27,19 @@ describe("createLiveGrader", () => {
     await grader(request());
 
     expect(makeModel).toHaveBeenCalledTimes(1);
-    expect(makeModel).toHaveBeenCalledWith("prefer_on_device");
+    expect(makeModel).toHaveBeenCalledWith("prefer_on_device", "es");
   });
 
   it("routes to the cloud while Nano is downloading", async () => {
     const { grader, makeModel } = setup({ kind: "downloading", progress: 0.3 });
     await grader(request());
-    expect(makeModel).toHaveBeenCalledWith("only_in_cloud");
+    expect(makeModel).toHaveBeenCalledWith("only_in_cloud", "es");
   });
 
   it("routes on-device only when offline with Nano ready", async () => {
     const { grader, makeModel } = setup({ kind: "ready" }, false);
     await grader(request());
-    expect(makeModel).toHaveBeenCalledWith("only_on_device");
+    expect(makeModel).toHaveBeenCalledWith("only_on_device", "es");
   });
 
   it("reads the device state on every call, not just the first", async () => {
@@ -71,5 +71,34 @@ describe("createLiveGrader", () => {
       },
     });
     await expect(grader(request())).rejects.toThrow("Firebase config is missing");
+  });
+});
+
+describe("createLiveGrader across languages", () => {
+  const forLanguage = (language: string) => ({ ...request(), scenario: { ...scenario, language } });
+
+  it("builds one on-device model per supported language and routes cloud-only ones to the cloud", async () => {
+    const makeModel = vi.fn((_mode: InferenceMode, _language: string) => fakeModel());
+    const grader = createLiveGrader({ deviceStatus: () => ({ kind: "ready" }), isOnline: () => true, makeModel });
+
+    await grader(forLanguage("es"));
+    await grader(forLanguage("ja"));
+    await grader(forLanguage("ja"));
+    const korean = await grader(forLanguage("ko"));
+
+    expect(makeModel.mock.calls).toEqual([
+      ["prefer_on_device", "es"],
+      ["prefer_on_device", "ja"],
+      ["only_in_cloud", "ko"],
+    ]);
+    expect(korean.route).toBe("Cloud: on-device AI doesn't support Korean yet");
+  });
+
+  it("shares one cloud model between cloud-only languages", async () => {
+    const makeModel = vi.fn((_mode: InferenceMode, _language: string) => fakeModel());
+    const grader = createLiveGrader({ deviceStatus: () => ({ kind: "ready" }), isOnline: () => true, makeModel });
+    await grader(forLanguage("it"));
+    await grader(forLanguage("zh"));
+    expect(makeModel).toHaveBeenCalledTimes(1);
   });
 });

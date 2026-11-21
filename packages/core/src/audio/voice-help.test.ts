@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { detectPlatform } from "./voice-help";
+import { detectPlatform, voiceHelp } from "./voice-help";
 
 describe("detectPlatform", () => {
   it.each([
@@ -12,5 +12,17 @@ describe("detectPlatform", () => {
     ["SomethingElse/1.0", "other"],
   ] as const)("%s → %s", (ua, platform) => {
     expect(detectPlatform(ua)).toBe(platform);
+  });
+});
+
+describe("voiceHelp", () => {
+  it("names the lesson language in the steps", () => {
+    expect(voiceHelp("windows", "ja").steps.join(" ")).toContain("add Japanese");
+    expect(voiceHelp("android", "pt-BR").steps.join(" ")).toContain("Portuguese");
+  });
+
+  it("suggests named Mac voices when it knows some", () => {
+    expect(voiceHelp("mac", "fr").steps.join(" ")).toContain("Amélie");
+    expect(voiceHelp("mac", "nl").steps.join(" ")).not.toContain("for example");
   });
 });

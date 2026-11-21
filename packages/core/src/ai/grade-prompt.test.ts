@@ -59,3 +59,18 @@ describe("GRADE_SYSTEM_INSTRUCTION", () => {
     expect(GRADE_SYSTEM_INSTRUCTION).toMatch(/JSON/);
   });
 });
+
+describe("buildGradePrompt in other languages", () => {
+  it("names the lesson language and allows romanization for non-Latin scripts", () => {
+    const japanese = buildGradePrompt({ scenario: { ...scenario, language: "ja" }, line: askName, reply: "watashi wa Sam desu" });
+    expect(japanese).toContain("Language: Japanese");
+    expect(japanese).toContain("A reply in romaji is fine");
+  });
+
+  it("doesn't mention romanization for Latin-script languages", () => {
+    const french = buildGradePrompt({ scenario: { ...scenario, language: "fr" }, line: askName, reply: "Je m'appelle Sam" });
+    expect(french).toContain("Language: French");
+    expect(french).not.toContain("romaj");
+    expect(french).not.toContain("is fine");
+  });
+});

@@ -616,6 +616,65 @@ button.chip {
   box-shadow: 0 2px 0 var(--ink);
 }
 
+.language-picker {
+  margin: 0;
+  padding: 0;
+  border: 0;
+  display: grid;
+  gap: 0.5rem;
+}
+
+.language-options {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(7.5rem, 1fr));
+  gap: 0.5rem;
+}
+
+.language-option {
+  position: relative;
+  display: grid;
+  justify-items: center;
+  padding: 0.4rem 0.5rem;
+  border: 2px solid var(--ink);
+  border-radius: var(--radius-small);
+  background: var(--cream);
+  box-shadow: 0 3px 0 var(--ink);
+  cursor: pointer;
+  text-align: center;
+}
+
+.language-option input {
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.language-option.active {
+  background: var(--mint);
+  transform: translateY(2px);
+  box-shadow: 0 1px 0 var(--ink);
+}
+
+.language-option:has(input:focus-visible) {
+  outline: 3px solid var(--sky);
+  outline-offset: 2px;
+}
+
+.language-picker:disabled .language-option {
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+.language-native {
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: 1.05rem;
+}
+
+.language-english {
+  font-size: 0.8rem;
+}
+
 .steps {
   list-style: none;
   margin: 0;

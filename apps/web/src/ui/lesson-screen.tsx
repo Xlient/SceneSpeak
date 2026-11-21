@@ -6,6 +6,7 @@ import { LESSON_MODES, type LessonMode, MODE_SETTINGS } from "@scenespeak/core/l
 import { characterAnimation, currentLine, initialLessonState, lessonReducer } from "@scenespeak/core/lesson/lesson-progress";
 import type { PlayableLesson } from "@scenespeak/core/lesson/playable-lesson";
 import { scoreLesson } from "@scenespeak/core/lesson/scoring";
+import { languageName } from "@scenespeak/core/language/languages";
 import { LEARNER_SPEAKER } from "@scenespeak/core/schemas";
 import { FeedbackCard } from "./feedback-card";
 import { BreakdownCard } from "./breakdown-card";
@@ -54,6 +55,7 @@ const useBackdrop = (lesson: PlayableLesson): { url?: string } | undefined => {
 
 export const LessonScreen = ({ lesson, initialMode = "typing", onExit, onComplete }: LessonScreenProps) => {
   const { scenario, manifest } = lesson;
+  const languageLabel = languageName(scenario.language);
   const { grader, voiceGrader, speechConnected } = useServices();
   const reducer = useMemo(() => lessonReducer(scenario), [scenario]);
   const [state, dispatch] = useReducer(reducer, scenario, initialLessonState);
@@ -124,7 +126,7 @@ export const LessonScreen = ({ lesson, initialMode = "typing", onExit, onComplet
 
   const typedReply = (
     <form onSubmit={submit}>
-      <label htmlFor="reply-input">Your reply in Spanish</label>
+      <label htmlFor="reply-input">Your reply in {languageLabel}</label>
       <div className="reply-row">
         <input
           id="reply-input"
@@ -163,7 +165,7 @@ export const LessonScreen = ({ lesson, initialMode = "typing", onExit, onComplet
             </label>
           ))}
         </fieldset>
-        <span className="pill">Spanish · {scenario.level}</span>
+        <span className="pill">{languageLabel} · {scenario.level}</span>
       </div>
 
       <div className="card scene-stage">
@@ -236,7 +238,7 @@ export const LessonScreen = ({ lesson, initialMode = "typing", onExit, onComplet
         {(state.phase === "replying" || state.phase === "grading") &&
           (voiceFirst ? (
             <div className="reply speaking-reply">
-              <p className="speaking-prompt">Say it out loud in Spanish</p>
+              <p className="speaking-prompt">Say it out loud in {languageLabel}</p>
               <VoiceReply primary disabled={state.phase === "grading"} onRecorded={submitVoice} />
               {state.phase === "grading" && (
                 <p className="audio-note" role="status">
@@ -260,7 +262,7 @@ export const LessonScreen = ({ lesson, initialMode = "typing", onExit, onComplet
         {state.phase === "feedback" && state.lastResult && (
           <>
             <div aria-live="polite">
-              <FeedbackCard result={state.lastResult} />
+              <FeedbackCard result={state.lastResult} language={scenario.language} />
             </div>
             <div className="actions">
               {!state.lastResult.grade.ok && (

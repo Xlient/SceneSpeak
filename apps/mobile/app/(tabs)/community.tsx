@@ -36,7 +36,7 @@ export default function CommunityScreen() {
     <ScrollView contentContainerStyle={styles.page}>
       <Text style={styles.lead}>Lessons written by learners and teachers around the world, checked by our mods before they go live.</Text>
 
-      <LibrarySection language="es" onPlay={(entry) => void playLibrary(entry)} onCreate={() => router.push("/create")} />
+      <LibrarySection language={null} onPlay={(entry) => void playLibrary(entry)} onCreate={() => router.push("/create")} />
       {playError ? (
         <Text style={styles.error} accessibilityRole="alert">
           {playError}

@@ -22,17 +22,17 @@ describe("createLiveExplainer", () => {
     const { explainer, makeModel } = setup({ kind: "ready" });
     await explainer(request());
     await expect(explainer(request())).resolves.toMatchObject({ source: "on_device", route: expect.stringMatching(/^Device first/) });
-    expect(makeModel.mock.calls).toEqual([["prefer_on_device"]]);
+    expect(makeModel.mock.calls).toEqual([["prefer_on_device", "es"]]);
   });
 
   it("uses the cloud for languages Nano doesn't support or while it downloads", async () => {
-    const french = setup({ kind: "ready" });
-    await french.explainer(request("fr"));
-    expect(french.makeModel).toHaveBeenCalledWith("only_in_cloud");
+    const italian = setup({ kind: "ready" });
+    await italian.explainer(request("it"));
+    expect(italian.makeModel).toHaveBeenCalledWith("only_in_cloud", "it");
 
     const busy = setup({ kind: "downloading", progress: 0.2 });
     await busy.explainer(request());
-    expect(busy.makeModel).toHaveBeenCalledWith("only_in_cloud");
+    expect(busy.makeModel).toHaveBeenCalledWith("only_in_cloud", "es");
   });
 
   it("rejects instead of throwing when setup fails", async () => {
@@ -54,7 +54,7 @@ describe("createLiveCoach", () => {
     const makeModel = vi.fn((_mode: InferenceMode) => fake(note)());
     const coach = createLiveCoach({ deviceStatus: () => ({ kind: "idle" }), makeModel });
     await expect(coach(request())).resolves.toMatchObject({ note: { recap: "r" }, route: "Device only: practice stats stay private" });
-    expect(makeModel.mock.calls).toEqual([["only_on_device"]]);
+    expect(makeModel.mock.calls).toEqual([["only_on_device", "en"]]);
   });
 
   it.each([{ kind: "not-supported" }, { kind: "unavailable", reason: "no space" }] as const)("refuses without a model when the device is $kind", async (status) => {

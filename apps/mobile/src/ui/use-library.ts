@@ -11,7 +11,7 @@ type LoadState = { status: "loading" } | { status: "ready"; entries: LibraryEntr
 const messageOf = (error: unknown, fallback: string) => (error instanceof NotConnectedError ? error.message : fallback);
 
 // Same behaviour as the web app's useLibrary: members vote and report; guests browse.
-export const useLibrary = (library: LibraryStore, auth: AuthStatus, language: string) => {
+export const useLibrary = (library: LibraryStore, auth: AuthStatus, language: string | null) => {
   const [state, setState] = useState<LoadState>({ status: "loading" });
   const [voted, setVoted] = useState<ReadonlySet<string>>(new Set());
   const [notice, setNotice] = useState<string | null>(null);

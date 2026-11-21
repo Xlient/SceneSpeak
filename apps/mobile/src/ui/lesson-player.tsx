@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useReducer, useRef, useState } from "react";
 import { Platform, ScrollView, StyleSheet, Switch, Text, TextInput, View } from "react-native";
+import { languageName } from "@scenespeak/core/language/languages";
 import type { Grader } from "@scenespeak/core/lesson/grader";
 import { LESSON_MODES, type LessonMode, MODE_SETTINGS } from "@scenespeak/core/lesson/lesson-mode";
 import { characterAnimation, currentLine, initialLessonState, lessonReducer } from "@scenespeak/core/lesson/lesson-progress";
@@ -42,6 +43,7 @@ const Toggle = ({ label, value, onChange }: { label: string; value: boolean; onC
 /** Same reducer, grading and scoring as the web lesson screen, with Typing and Speaking modes. */
 export const LessonPlayer = ({ lesson, grader, voiceGrader, initialMode = "typing", onExit, onComplete }: LessonPlayerProps) => {
   const { scenario, manifest } = lesson;
+  const languageLabel = languageName(scenario.language);
   const reducer = useMemo(() => lessonReducer(scenario), [scenario]);
   const [state, dispatch] = useReducer(reducer, scenario, initialLessonState);
   const [reply, setReply] = useState("");
@@ -111,7 +113,7 @@ export const LessonPlayer = ({ lesson, grader, voiceGrader, initialMode = "typin
   const typedReply = (
     <View style={styles.reply}>
       <Text style={styles.label} nativeID="reply-label">
-        Your reply in Spanish
+        Your reply in {languageLabel}
       </Text>
       <View style={styles.replyRow}>
         <TextInput
@@ -123,7 +125,7 @@ export const LessonPlayer = ({ lesson, grader, voiceGrader, initialMode = "typin
           autoCorrect={false}
           autoCapitalize="none"
           returnKeyType="send"
-          accessibilityLabel="Your reply in Spanish"
+          accessibilityLabel={`Your reply in ${languageLabel}`}
           accessibilityLabelledBy="reply-label"
         />
         <ToyButton label={grading ? "Checking…" : "Send"} onPress={submit} disabled={grading || !reply.trim()} />
@@ -171,7 +173,7 @@ export const LessonPlayer = ({ lesson, grader, voiceGrader, initialMode = "typin
       {(state.phase === "replying" || grading) &&
         (speaking && !typeInstead ? (
           <View style={styles.reply}>
-            <Text style={styles.prompt}>Say it out loud in Spanish</Text>
+            <Text style={styles.prompt}>Say it out loud in {languageLabel}</Text>
             <VoiceReply disabled={grading} onRecorded={submitVoice} />
             {grading && (
               <Text style={styles.note} accessibilityLiveRegion="polite">

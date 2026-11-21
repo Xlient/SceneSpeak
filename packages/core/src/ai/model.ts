@@ -7,6 +7,7 @@ import {
   getAI,
   getGenerativeModel,
 } from "firebase/ai";
+import { modelLanguages } from "../language/languages";
 import { getFirebaseApp } from "./firebase";
 import { withTimeout } from "./with-timeout";
 
@@ -17,8 +18,11 @@ export interface CreateModelOptions {
   cloudModel?: string;
   systemInstruction?: string;
   jsonSchema?: Record<string, unknown>;
-  languages?: string[];          // default ["en", "es"]
-  timeoutMs?: number;            
+  /** Lesson language: Nano is told to expect English plus this one when it supports it. */
+  language?: string | undefined;
+  /** Exact list; overrides `language`. */
+  languages?: string[];
+  timeoutMs?: number;
 }
 export interface CallOptions { timeoutMs?: number; signal?: AbortSignal }
 export interface TextResult { text: string; source: InferenceSource | undefined }
@@ -40,7 +44,7 @@ export const firebaseFactory: ModelFactory = (params) =>
   getGenerativeModel(getAI(getFirebaseApp(), { backend: new GoogleAIBackend() }), params);
 
 export const buildHybridParams = (mode: InferenceMode, options: CreateModelOptions = {}): HybridParams => {
-  const languages = options.languages ?? ["en", "es"];
+  const languages = options.languages ?? modelLanguages(options.language);
   const schema = options.jsonSchema;
   return {
     mode,

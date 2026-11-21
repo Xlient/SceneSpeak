@@ -1,9 +1,10 @@
+import { languageName } from "../language/languages";
 import { WORD_ROLES } from "../lesson/sentence-breakdown";
 
 // Kept short and concrete for the small on-device model.
 export const EXPLAIN_SYSTEM_INSTRUCTION = `You explain the grammar of one sentence to an English-speaking beginner.
 Rules:
-- words: go through the sentence in order. Copy each word exactly as written (keep accents; no punctuation). Keep fixed expressions together as one entry (e.g. "por favor", "buenos días").
+- words: go through the sentence in order. Copy each word exactly as written (keep accents and the original script; no punctuation). For languages written without spaces, split into words and particles. Keep fixed expressions together as one entry (e.g. "por favor", "s'il vous plaît").
 - role: one of ${WORD_ROLES.join(", ")}. Use "phrase" for fixed expressions.
 - meaning: the English meaning in this sentence, a few words at most.
 - note: one short grammar fact a beginner would find useful (tense, person, gender, formality), or null.
@@ -35,7 +36,7 @@ export const EXPLAIN_JSON_SCHEMA = {
 };
 
 export const buildExplainPrompt = ({ text, language, translation }: { text: string; language: string; translation: string }): string => {
-  const name = new Intl.DisplayNames(["en"], { type: "language" }).of(language) ?? language;
+  const name = languageName(language);
   const safe = text.replace(/</g, "&lt;").replace(/>/g, "&gt;");
   return [`Language: ${name}`, `Sentence: <sentence>${safe}</sentence>`, `English meaning: ${translation}`].join("\n");
 };

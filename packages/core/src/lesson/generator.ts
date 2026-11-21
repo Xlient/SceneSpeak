@@ -1,3 +1,4 @@
+import type { LessonLanguageCode } from "../language/languages";
 import type { SceneRecipe } from "../scene/recipe/scene-recipe";
 import type { Intent, Scenario } from "../schemas";
 import { NotConnectedError } from "../services/not-connected";
@@ -13,7 +14,7 @@ export interface GenerationProgress {
 
 export interface LessonRequest {
   prompt: string;
-  language: "es";
+  language: LessonLanguageCode;
   signal: AbortSignal;
   /** Call when each step starts so the UI can show where the work is running. */
   onProgress: (progress: GenerationProgress) => void;

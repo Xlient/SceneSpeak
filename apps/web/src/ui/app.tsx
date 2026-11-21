@@ -140,7 +140,7 @@ const Shell = ({ authClient }: { authClient: AuthClient | null }) => {
                 library={
                   <LibrarySection
                     auth={session.status}
-                    language="es"
+                    language={null}
                     onPlay={(entry: LibraryEntry) => void playLibrary(entry.id)}
                     onCreate={() => setScreen({ kind: "create" })}
                     onSignIn={session.enabled ? session.signInWithGoogle : undefined}

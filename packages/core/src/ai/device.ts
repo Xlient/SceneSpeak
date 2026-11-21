@@ -1,4 +1,5 @@
 import { InferenceMode } from "firebase/ai";
+import { DEFAULT_LESSON_LANGUAGE } from "../language/languages";
 import { type ModelPort, buildHybridParams, firebaseFactory } from "./model";
 import { AiAbortedError, withTimeout } from "./with-timeout";
 
@@ -32,7 +33,7 @@ export const initDeviceModel = async (
 ): Promise<DeviceModelStatus> => {
 
 const isSupported = deps.isSupported ?? (() => hasPromptApi());
-const createSetupModel = deps.createSetupModel ?? (() => firebaseFactory(buildHybridParams(InferenceMode.ONLY_ON_DEVICE)));
+const createSetupModel = deps.createSetupModel ?? (() => firebaseFactory(buildHybridParams(InferenceMode.ONLY_ON_DEVICE, { language: DEFAULT_LESSON_LANGUAGE })));
 
 // helper: report(status) → calls onStatus(status), then returns status
 const report = (status: DeviceModelStatus): DeviceModelStatus => {

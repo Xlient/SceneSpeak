@@ -1,9 +1,7 @@
 import { InferenceMode } from "firebase/ai";
 import type { DeviceModelStatus } from "../ai/device";
+import { isOnDeviceLanguage, languageName } from "../language/languages";
 import type { AiTask } from "../monitor/model-monitor";
-
-/** Languages Chrome's Prompt API accepts for text in and out. */
-export const ON_DEVICE_LANGUAGES: readonly string[] = ["en", "es", "ja"];
 
 /** Longer replies grade better on the bigger cloud model and risk Nano's context window. */
 export const MAX_ON_DEVICE_CHARS = 500;
@@ -36,8 +34,6 @@ const DEVICE_ONLY_TASKS: Partial<Record<AiTask, string>> = {
   coach: "practice stats stay private",
 };
 
-const baseLanguage = (language: string) => language.split("-")[0]?.toLowerCase() ?? language;
-
 /** First matching rule wins; order is privacy → capability → language → connectivity → size → device state. */
 export const routeAiCall = (input: RouteInput): RouteDecision => {
   const deviceOnly = DEVICE_ONLY_TASKS[input.task];
@@ -46,8 +42,8 @@ export const routeAiCall = (input: RouteInput): RouteDecision => {
   const cloudOnly = CLOUD_ONLY_TASKS[input.task];
   if (cloudOnly) return { mode: InferenceMode.ONLY_IN_CLOUD, rule: "capability", reason: `Cloud: ${cloudOnly}` };
 
-  if (!ON_DEVICE_LANGUAGES.includes(baseLanguage(input.language))) {
-    return { mode: InferenceMode.ONLY_IN_CLOUD, rule: "language", reason: `Cloud: on-device AI doesn't support "${input.language}"` };
+  if (!isOnDeviceLanguage(input.language)) {
+    return { mode: InferenceMode.ONLY_IN_CLOUD, rule: "language", reason: `Cloud: on-device AI doesn't support ${languageName(input.language)} yet` };
   }
 
   if (!input.online) {

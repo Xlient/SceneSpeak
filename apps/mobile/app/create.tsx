@@ -1,6 +1,7 @@
 import { Stack, useRouter } from "expo-router";
 import { useEffect, useRef, useState } from "react";
 import { ScrollView, StyleSheet, Text, TextInput, View } from "react-native";
+import { DEFAULT_LESSON_LANGUAGE, type LessonLanguageCode, findLanguage, languageName } from "@scenespeak/core/language/languages";
 import { LESSON_PROMPT_MAX, type LibraryMatch, checkLessonPrompt } from "@scenespeak/core/lesson/generator";
 import { buildPlayableLesson } from "@scenespeak/core/lesson/playable-lesson";
 import { parseLibraryLesson } from "@scenespeak/core/library/library";
@@ -10,6 +11,7 @@ import { rememberLesson } from "../src/services/lesson-store";
 import { color, outline, radius } from "../src/theme/tokens";
 import { GenerationSteps, type StepId } from "../src/ui/generation-steps";
 import { ToyButton } from "../src/ui/toy-button";
+import { LanguagePicker } from "../src/ui/language-picker";
 
 const EXAMPLES = ["Opening a bank account", "Asking a neighbour to borrow a ladder", "Checking in at a hotel", "Buying fruit at the market"];
 
@@ -22,6 +24,7 @@ type Status =
 export default function CreateLessonScreen() {
   const router = useRouter();
   const [prompt, setPrompt] = useState("");
+  const [language, setLanguage] = useState<LessonLanguageCode>(DEFAULT_LESSON_LANGUAGE);
   const [status, setStatus] = useState<Status>({ kind: "editing" });
   const [inputError, setInputError] = useState<string | null>(null);
   const controller = useRef<AbortController | null>(null);
@@ -42,7 +45,7 @@ export default function CreateLessonScreen() {
     try {
       const result = await appGenerator({
         prompt: request,
-        language: "es",
+        language,
         signal: current.signal,
         allowExisting,
         onProgress: (progress) => {
@@ -86,8 +89,9 @@ export default function CreateLessonScreen() {
     <ScrollView contentContainerStyle={styles.page} keyboardShouldPersistTaps="handled" automaticallyAdjustKeyboardInsets>
       <Stack.Screen options={{ title: "Create a lesson" }} />
       <View style={styles.card}>
+        <LanguagePicker value={language} onChange={setLanguage} disabled={working} />
         <Text style={styles.label} nativeID="prompt-label">
-          What do you want to be able to say? (English or Spanish)
+          What do you want to be able to say? (English or {languageName(language)})
         </Text>
         <TextInput
           style={styles.input}
@@ -139,7 +143,7 @@ export default function CreateLessonScreen() {
           <Text style={styles.heading} accessibilityRole="header">
             Progress
           </Text>
-          <GenerationSteps active={status.step} failed={status.kind === "failed"} />
+          <GenerationSteps active={status.step} failed={status.kind === "failed"} onDevice={findLanguage(language)?.onDevice ?? false} />
           {status.kind === "failed" && (
             <>
               <Text style={styles.error} accessibilityRole="alert">

@@ -14,7 +14,8 @@ const matches = (entry: LibraryEntry, query: string) => {
 };
 
 export interface LibrarySectionProps {
-  language: string;
+  /** null lists every language. */
+  language: string | null;
   onPlay: (entry: LibraryEntry) => void;
   onCreate: () => void;
 }
