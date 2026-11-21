@@ -7,6 +7,8 @@
 #
 # Variables: the same EXPO_PUBLIC_FIREBASE_* and EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID as android-release.yml,
 # plus EXPO_PUBLIC_GOOGLE_IOS_URL_SCHEME (reversed iOS client ID) for Google sign-in.
+# Secrets: GOOGLE_SERVICE_INFO_PLIST_BASE64 (native Firebase AI Logic) and SCENESPEAK_APPCHECK_DEBUG_TOKEN
+# (registered for the iOS app; simulator builds can't use App Attest, so they carry it).
 name: iOS simulator build
 
 on:
@@ -52,7 +54,15 @@ jobs:
         working-directory: .
         run: pnpm install --frozen-lockfile
 
+      - name: Firebase native config
+        env:
+          SERVICE_INFO_B64: ${{ secrets.GOOGLE_SERVICE_INFO_PLIST_BASE64 }}
+        run: |
+          if [ -n "$SERVICE_INFO_B64" ]; then echo "$SERVICE_INFO_B64" | base64 --decode > GoogleService-Info.plist; fi
+
       - name: Prebuild (generate ios/ and install pods)
+        env:
+          SCENESPEAK_APPCHECK_DEBUG_TOKEN: ${{ secrets.SCENESPEAK_APPCHECK_DEBUG_TOKEN }}
         run: |
           pnpm exec expo prebuild --platform ios --clean
           # prebuild reports a failed `pod install` but still exits 0: fail here instead.

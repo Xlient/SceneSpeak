@@ -12,6 +12,12 @@ Pod::Spec.new do |s|
 
   s.dependency 'ExpoModulesCore'
 
+  # Firebase hybrid inference (Apple Foundation Models + cloud Gemini). CocoaPods, not SPM: Google sign-in already
+  # pulls AppCheckCore as a pod, and an SPM copy of it would define the module twice.
+  s.dependency 'FirebaseCore', '12.19.0'
+  s.dependency 'FirebaseAILogic', '12.19.0'
+  s.dependency 'FirebaseAppCheck', '12.19.0'
+
   s.pod_target_xcconfig = { 'DEFINES_MODULE' => 'YES' }
   s.source_files = "**/*.{h,m,mm,swift,hpp,cpp}"
 end
