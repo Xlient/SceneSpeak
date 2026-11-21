@@ -42,11 +42,16 @@ export const usePronunciation = ({ lessonId, lineId, speaker, text, language, au
 
   useEffect(() => {
     let active = true;
-    void waitForVoices().then(() => {
+    const check = () => {
       if (active) setDeviceVoice(hasBrowserVoice(language));
-    });
+    };
+    void waitForVoices().then(check);
+    // Phones can list voices well after the first wait; re-check instead of staying "no voice".
+    const engine = typeof speechSynthesis === "undefined" ? undefined : speechSynthesis;
+    engine?.addEventListener("voiceschanged", check);
     return () => {
       active = false;
+      engine?.removeEventListener("voiceschanged", check);
     };
   }, [language]);
 
@@ -54,12 +59,26 @@ export const usePronunciation = ({ lessonId, lineId, speaker, text, language, au
   const source = chooseVoiceSource(choice, { cloud: media.status, device: deviceVoice });
   const voiceName = choice.kind === "device" ? choice.voiceName : undefined;
 
+  const [playingWord, setPlayingWord] = useState<number | null>(null);
+
   const stop = useCallback(() => {
     audio.current?.pause();
     stopDevice.current?.();
     stopDevice.current = null;
     setPlaying(false);
+    setPlayingWord(null);
   }, []);
+
+  // Single words always use the device voice: instant, and no cloud call per tap. Never advances the lesson.
+  const playWord = useCallback(
+    (word: string, index: number) => {
+      stop();
+      if (deviceVoice !== true) return;
+      setPlayingWord(index);
+      stopDevice.current = speakWithBrowser(word, language, () => setPlayingWord(null), voiceName);
+    },
+    [deviceVoice, language, voiceName, stop],
+  );
 
   const finish = useCallback(() => {
     setPlaying(false);
@@ -91,5 +110,5 @@ export const usePronunciation = ({ lessonId, lineId, speaker, text, language, au
 
   useEffect(() => stop, [key, stop]);
 
-  return { source, playing, play, stop };
+  return { source, playing, play, stop, wordsPlayable: deviceVoice === true, playingWord, playWord };
 };

@@ -73,24 +73,65 @@ export const waitForVoices = (timeoutMs = 1500): Promise<void> => {
   });
 };
 
+const isCancel = (error: string) => error === "interrupted" || error === "canceled";
+
+export const START_TIMEOUT_MS = 2500;
+
+// Chrome stops firing events for utterances it garbage-collects, so keep the live ones referenced.
+const inFlight = new Set<SpeechSynthesisUtterance>();
+
 /** Speaks with the browser's built-in voice (not an AI model; nothing leaves the device). Returns a stop function. */
 export const speakWithBrowser = (text: string, lang: string, onEnd?: () => void, voiceName?: string): (() => void) => {
   const engine = synth();
   if (!engine) return () => {};
   engine.cancel();
-  const utterance = new SpeechSynthesisUtterance(text);
-  utterance.lang = speechLocale(lang);
   const voices = engine.getVoices();
   const voice = (voiceName ? voices.find((v) => v.name === voiceName) : undefined) ?? pickVoice(voices, lang);
-  if (voice) utterance.voice = voice;
-  utterance.rate = 0.9;
   let stopped = false;
-  utterance.onend = () => {
-    if (!stopped) onEnd?.();
+  let attempt = 0;
+  let watchdog: ReturnType<typeof setTimeout> | undefined;
+
+  const say = (withVoice: SpeechSynthesisVoice | undefined) => {
+    const mine = ++attempt;
+    const current = () => !stopped && mine === attempt;
+    // A listed voice can be missing its data, or Chrome can silently drop the utterance: let the engine pick by
+    // language instead, and if that fails too, finish rather than leave the lesson waiting.
+    const giveUp = () => (withVoice ? say(undefined) : onEnd?.());
+    const utterance = new SpeechSynthesisUtterance(text);
+    utterance.lang = speechLocale(lang);
+    if (withVoice) utterance.voice = withVoice;
+    utterance.rate = 0.9;
+    const settle = () => {
+      clearTimeout(watchdog);
+      inFlight.delete(utterance);
+    };
+    utterance.onstart = () => clearTimeout(watchdog);
+    utterance.onend = () => {
+      settle();
+      if (current()) onEnd?.();
+    };
+    utterance.onerror = (event) => {
+      settle();
+      if (current() && !isCancel(event.error)) giveUp();
+    };
+    clearTimeout(watchdog);
+    watchdog = setTimeout(() => {
+      if (!current()) return;
+      inFlight.delete(utterance);
+      engine.cancel();
+      giveUp();
+    }, START_TIMEOUT_MS);
+    inFlight.add(utterance);
+    engine.speak(utterance);
   };
-  engine.speak(utterance);
+
+  // Chrome can drop an utterance queued in the same task as cancel().
+  setTimeout(() => {
+    if (!stopped) say(voice);
+  }, 0);
   return () => {
     stopped = true;
+    clearTimeout(watchdog);
     engine.cancel();
   };
 };
