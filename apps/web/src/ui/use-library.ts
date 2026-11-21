@@ -11,7 +11,7 @@ type LoadState = { status: "loading" } | { status: "ready"; entries: LibraryEntr
 
 const messageOf = (error: unknown, fallback: string) => (error instanceof NotConnectedError ? error.message : fallback);
 
-export const useLibrary = (auth: AuthStatus, language: string) => {
+export const useLibrary = (auth: AuthStatus, language: string | null) => {
   const { library } = useServices();
   const [state, setState] = useState<LoadState>({ status: "loading" });
   const [voted, setVoted] = useState<ReadonlySet<string>>(new Set());

@@ -45,7 +45,7 @@ export default function WelcomeScreen() {
         <Bullets
           items={[
             "Read what the character says. Flip on Show English if you need it.",
-            "Type your reply in Spanish.",
+            "Type your reply in the language you picked.",
             "Get instant feedback with a better way to say it, then keep the conversation going.",
           ]}
         />

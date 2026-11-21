@@ -28,8 +28,21 @@ describe("routeAiCall", () => {
     expect(routeAiCall(grade({ task: "coach", device: "unavailable", language: "fr", online: false }))).toMatchObject({ mode: "only_on_device" });
   });
 
-  it("sends languages Nano doesn't support to the cloud", () => {
-    expect(routeAiCall(grade({ language: "fr" }))).toMatchObject({ mode: "only_in_cloud", rule: "language" });
+  it("sends languages Nano doesn't support to the cloud, naming them in the reason", () => {
+    expect(routeAiCall(grade({ language: "it" }))).toMatchObject({
+      mode: "only_in_cloud",
+      rule: "language",
+      reason: "Cloud: on-device AI doesn't support Italian yet",
+    });
+  });
+
+  it.each(["fr", "de", "ja"])("grades %s on-device first", (language) => {
+    expect(routeAiCall(grade({ language })).rule).toBe("on-device");
+  });
+
+  it.each(["pt", "ko", "zh", "nl"])("sends %s to the cloud, even offline", (language) => {
+    expect(routeAiCall(grade({ language }))).toMatchObject({ mode: "only_in_cloud", rule: "language" });
+    expect(routeAiCall(grade({ language, online: false })).rule).toBe("language");
   });
 
   it("matches region tags by their base language", () => {

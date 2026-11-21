@@ -1,3 +1,5 @@
+import { speechLocale } from "../language/languages";
+
 /** The parts of SpeechSynthesisVoice that voice picking needs. */
 export interface VoiceLike {
   lang: string;
@@ -16,7 +18,7 @@ const normalizeLang = (lang: string) => lang.toLowerCase().replace("_", "-");
 
 /** Quality score for a voice in a language, or -Infinity when it doesn't speak it. */
 const scoreVoice = (voice: VoiceLike, lang: string): number => {
-  const wanted = normalizeLang(lang);
+  const wanted = normalizeLang(speechLocale(lang));
   const voiceLang = normalizeLang(voice.lang);
   if (base(voiceLang) !== base(wanted)) return -Infinity;
   return (
@@ -77,7 +79,7 @@ export const speakWithBrowser = (text: string, lang: string, onEnd?: () => void,
   if (!engine) return () => {};
   engine.cancel();
   const utterance = new SpeechSynthesisUtterance(text);
-  utterance.lang = lang;
+  utterance.lang = speechLocale(lang);
   const voices = engine.getVoices();
   const voice = (voiceName ? voices.find((v) => v.name === voiceName) : undefined) ?? pickVoice(voices, lang);
   if (voice) utterance.voice = voice;

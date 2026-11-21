@@ -61,3 +61,38 @@ describe("capPartialReply", () => {
     expect(capPartialReply(grade(), greet, "Hola, sí, soy nuevo").score).toBe(90);
   });
 });
+
+describe("normalizeReply in other languages", () => {
+  it("drops French and German accents but folds ß", () => {
+    expect(normalizeReply("Ça va très bien !")).toBe("ca va tres bien");
+    expect(normalizeReply("Grüß Gott")).toBe("gruss gott");
+  });
+
+  it("keeps Japanese voicing marks, so が and か stay different", () => {
+    expect(normalizeReply("がっこう")).not.toBe(normalizeReply("かっこう"));
+    expect(normalizeReply("コーヒーをください。")).toBe("コーヒーをください");
+  });
+
+  it("folds full-width forms and ignores spaces between Japanese or Chinese words", () => {
+    expect(normalizeReply("すみません、 コーヒー を ください！")).toBe(normalizeReply("すみません、コーヒーをください。"));
+    expect(normalizeReply("ＡＢＣ")).toBe("abc");
+    expect(normalizeReply("你好 ， 我 叫 Sam")).toBe("你好我叫sam");
+  });
+
+  it("keeps Korean syllables intact", () => {
+    expect(normalizeReply("안녕하세요!")).toBe("안녕하세요");
+  });
+});
+
+describe("quickGrade in other languages", () => {
+  it("passes an exact Japanese reply typed with different punctuation", () => {
+    const line = { ...askName, text: "はじめまして。サムです。" };
+    expect(quickGrade(line, "はじめまして サムです")?.score).toBe(100);
+  });
+
+  it("counts Japanese by characters when spotting partial replies", () => {
+    const line = { ...askName, text: "コーヒーを一つください。" };
+    expect(isPartialReply(line, "コーヒー")).toBe(true);
+    expect(isPartialReply(line, "コーヒーをください")).toBe(false);
+  });
+});

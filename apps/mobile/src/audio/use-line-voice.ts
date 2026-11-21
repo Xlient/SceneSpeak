@@ -1,5 +1,6 @@
 import * as Speech from "expo-speech";
 import { useCallback, useEffect, useRef, useState } from "react";
+import { speechLocale } from "@scenespeak/core/language/languages";
 import { pickPhoneVoice } from "./device-voice";
 
 type VoiceState = { status: "loading" } | { status: "ready"; voice: string } | { status: "none" };
@@ -51,7 +52,7 @@ export const useLineVoice = ({ text, language, autoPlay, onEnded }: LineVoiceOpt
     setPlaying(true);
     const done = () => setPlaying(false);
     Speech.speak(text, {
-      language,
+      language: speechLocale(language),
       voice: voice.voice,
       rate: 0.9,
       onDone: () => {

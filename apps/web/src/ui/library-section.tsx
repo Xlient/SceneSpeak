@@ -6,7 +6,8 @@ import { useLibrary } from "./use-library";
 
 export interface LibrarySectionProps {
   auth: AuthStatus;
-  language: string;
+  /** null lists every language. */
+  language: string | null;
   onPlay: (entry: LibraryEntry) => void;
   onCreate: () => void;
   onSignIn?: (() => void) | undefined;

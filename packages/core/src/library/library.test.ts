@@ -52,3 +52,11 @@ describe("toPublishDoc and parseLibraryLesson", () => {
     expect(() => parseLibraryLesson("not json")).toThrow();
   });
 });
+
+describe("rankLibrary across languages", () => {
+  it("lists every language when the filter is null", () => {
+    const rows = [row({ id: "es" }), row({ id: "ja", language: "ja", votes: 9 })];
+    expect(rankLibrary(rows, null).map((e) => e.id)).toEqual(["ja", "es"]);
+    expect(rankLibrary(rows, "ja").map((e) => e.id)).toEqual(["ja"]);
+  });
+});

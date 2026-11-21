@@ -1,11 +1,11 @@
 import { useId, useState } from "react";
+import { findLanguage } from "@scenespeak/core/language/languages";
 import { speakWithBrowser, voiceTags } from "@scenespeak/core/audio/browser-voice";
-import { VOICE_HELP, detectPlatform } from "@scenespeak/core/audio/voice-help";
+import { detectPlatform, voiceHelp } from "@scenespeak/core/audio/voice-help";
 import type { VoiceChoice } from "@scenespeak/core/audio/voice-preference";
 import { useBrowserVoices, useVoiceChoice } from "./use-voices";
 
 const TAG_LABEL = { premium: "clear", online: "online", novelty: "novelty" } as const;
-const SAMPLE: Record<string, string> = { es: "¡Hola! Encantado de conocerte." };
 
 const toValue = (choice: VoiceChoice) => (choice.kind === "device" ? `device:${choice.voiceName}` : choice.kind);
 const fromValue = (value: string): VoiceChoice =>
@@ -22,8 +22,8 @@ export const VoicePicker = ({ language, cloudAvailable }: VoicePickerProps) => {
   const [choice, setChoice] = useVoiceChoice(language);
   const [helpOpen, setHelpOpen] = useState(false);
   const selectId = useId();
-  const help = VOICE_HELP[detectPlatform(typeof navigator === "undefined" ? "" : navigator.userAgent)];
-  const sample = SAMPLE[language.split("-")[0] ?? language] ?? "Hello!";
+  const help = voiceHelp(detectPlatform(typeof navigator === "undefined" ? "" : navigator.userAgent), language);
+  const sample = findLanguage(language)?.sample ?? "Hello!";
   const noClearVoice = !voices.some((v) => voiceTags(v).includes("premium"));
 
   return (

@@ -1,3 +1,4 @@
+import { languageName, romanizationOf } from "../language/languages";
 import { ERROR_TYPES, type Line, type Scenario } from "../schemas";
 
 export interface GradePromptInput {
@@ -10,7 +11,7 @@ export interface GradePromptInput {
 export const GRADE_SYSTEM_INSTRUCTION = `You grade a language learner's reply in a short role-play.
 Rules:
 - Judge meaning first. ok = true if the reply is understandable and does the goal, even if it differs from the example answer.
-- Be gentle at A1/A2: small spelling or accent slips don't make ok false; fix them in correction.
+- Be gentle at A1/A2: small spelling, accent or umlaut slips, or a missing kana mark, don't make ok false; fix them in correction.
 - A reply much shorter than the example that leaves parts out can still be ok if it does the goal, but score it 60-75 and use the hint to suggest the fuller sentence.
 - meaningMatches = true if the reply means roughly what the example answer means.
 - score 0-100: 90+ natural and correct, 70-89 small mistakes, 40-69 understandable but flawed, below 40 not understandable or off-topic.
@@ -35,7 +36,8 @@ export const GRADE_JSON_SCHEMA = {
 };
 
 export const buildGradePrompt = ({ scenario, line, reply }: GradePromptInput): string => {
-  const language = new Intl.DisplayNames(["en"], { type: "language" }).of(scenario.language) ?? scenario.language;
+  const language = languageName(scenario.language);
+  const romanization = romanizationOf(scenario.language);
   const index = scenario.lines.findIndex((l) => l.id === line.id);
   const previous = index > 0 ? scenario.lines[index - 1] : undefined;
   const goal = scenario.goals.find((g) => g.id === line.expects);
@@ -43,6 +45,7 @@ export const buildGradePrompt = ({ scenario, line, reply }: GradePromptInput): s
 
   return [
     `Language: ${language} (level ${scenario.level})`,
+    romanization ? `A reply in ${romanization} is fine: grade it the same way and give the correction in ${language} script.` : null,
     `Scene: ${scenario.setting}`,
     previous ? `Character said: ${previous.text}` : null,
     `Example answer: ${line.text} (${line.translation})`,

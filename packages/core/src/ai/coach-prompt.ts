@@ -1,3 +1,4 @@
+import { languageName } from "../language/languages";
 import type { CoachRequest } from "../progress/coach";
 
 export const COACH_SYSTEM_INSTRUCTION = `You are a warm, encouraging language coach writing to a beginner about their week of practice.
@@ -21,7 +22,7 @@ export const COACH_JSON_SCHEMA = {
 
 /** Counts and lesson titles only: nothing the learner typed or said is ever in this prompt. */
 export const buildCoachPrompt = ({ summary, language, lessons }: Pick<CoachRequest, "summary" | "language" | "lessons">): string => {
-  const name = new Intl.DisplayNames(["en"], { type: "language" }).of(language) ?? language;
+  const name = languageName(language);
   const recent = new Set(summary.recentLessonIds);
   return [
     `Learning: ${name}`,

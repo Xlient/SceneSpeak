@@ -1,6 +1,6 @@
 import type { LessonScore } from "@scenespeak/core/lesson/scoring";
 
-const TITLES = ["Keep practising!", "Good start!", "¡Muy bien!", "¡Perfecto!"] as const;
+const TITLES = ["Keep practising!", "Good start!", "Great job!", "Perfect!"] as const;
 
 export interface LessonSummaryProps {
   score: LessonScore;

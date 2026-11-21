@@ -35,14 +35,14 @@ describe("createLiveGenerator", () => {
 
     if (result.kind !== "generated") throw new Error("expected a generated lesson");
     expect(result.lesson.scenario.lines.length).toBeGreaterThan(0);
-    expect(makeModel).toHaveBeenCalledWith("screen", "prefer_on_device");
-    expect(makeModel).toHaveBeenCalledWith("write", "only_in_cloud");
+    expect(makeModel).toHaveBeenCalledWith("screen", "prefer_on_device", "es");
+    expect(makeModel).toHaveBeenCalledWith("write", "only_in_cloud", "es");
   });
 
   it("screens in the cloud while Nano is downloading", async () => {
     const { generator, makeModel } = setup({ kind: "downloading", progress: 0.5 });
     await generator(request());
-    expect(makeModel).toHaveBeenCalledWith("screen", "only_in_cloud");
+    expect(makeModel).toHaveBeenCalledWith("screen", "only_in_cloud", "es");
   });
 
   it("reuses models across requests", async () => {
@@ -79,7 +79,7 @@ describe("createLiveGenerator", () => {
     const generator = createLiveGenerator({ deviceStatus: () => ({ kind: "ready" }), isOnline: () => true, makeModel, library });
 
     expect(await generator(request())).toEqual({ kind: "existing", match: { id: "lib-1", title: "Meeting the neighbours", votes: 5 } });
-    expect(makeModel).toHaveBeenCalledWith("match", "prefer_on_device");
+    expect(makeModel).toHaveBeenCalledWith("match", "prefer_on_device", "es");
     expect(writeCalls).not.toHaveBeenCalled();
   });
 });

@@ -1,16 +1,22 @@
 import type { Grade, Line } from "../schemas";
 
-export const normalizeReply = (text: string): string => {
-  // NFD splits "í" into "i" + accent mark; strip marks (\p{M}), lowercase, drop punctuation, squash spaces
+// Scripts written without spaces between words.
+const UNSPACED = /[\p{Script=Han}\p{Script=Hiragana}\p{Script=Katakana}]/gu;
+const SPACE_BY_UNSPACED = /\s+(?=[\p{Script=Han}\p{Script=Hiragana}\p{Script=Katakana}])|(?<=[\p{Script=Han}\p{Script=Hiragana}\p{Script=Katakana}])\s+/gu;
 
-  return text.normalize("NFD")
-  .replace(/\p{M}/gu, "")
-  .toLowerCase()
-  .replace(/[^\p{L}\p{N}\s]/gu, "")
-  .replace(/\s+/g, " ")
-  .trim();
-  
-};
+export const normalizeReply = (text: string): string =>
+  // NFKD folds full-width forms and splits "í" into "i" + accent. Only Latin-style accents (U+0300–036F) are dropped,
+  // so kana voicing marks and other scripts' vowel signs survive; NFC then rejoins them.
+  text
+    .normalize("NFKD")
+    .replace(/[̀-ͯ]/g, "")
+    .normalize("NFC")
+    .toLowerCase()
+    .replace(/ß/g, "ss")
+    .replace(/[^\p{L}\p{M}\p{N}\s]/gu, "")
+    .replace(/\s+/g, " ")
+    .replace(SPACE_BY_UNSPACED, "")
+    .trim();
 
 export const quickGrade = (line: Line, reply: string): Grade | null => {
   // empty or different from normalizeReply(line.text) → null; otherwise a perfect Grade
@@ -38,9 +44,12 @@ export const quickGrade = (line: Line, reply: string): Grade | null => {
 export const PARTIAL_REPLY_MAX_SCORE = 75;
 const MIN_EXAMPLE_WORDS = 3;
 
+/** Words for spaced scripts; Han and kana count as one word per two characters. */
 const wordCount = (text: string): number => {
   const normalized = normalizeReply(text);
-  return normalized === "" ? 0 : normalized.split(" ").length;
+  const unspaced = normalized.match(UNSPACED)?.length ?? 0;
+  const rest = normalized.replace(UNSPACED, " ").trim();
+  return (rest === "" ? 0 : rest.split(/\s+/).length) + Math.ceil(unspaced / 2);
 };
 
 export const isPartialReply = (line: Line, reply: string): boolean => {

@@ -93,3 +93,19 @@ describe("LESSON_SYSTEM_INSTRUCTION", () => {
     expect(LESSON_SYSTEM_INSTRUCTION).toMatch(/follow the request/);
   });
 });
+
+describe("buildLessonPrompt in other languages", () => {
+  const forLanguage = (language: string) =>
+    buildLessonPrompt({ request: "ordering coffee", topic: "ordering coffee", intents: [], language, catalog: CATALOG });
+
+  it("asks for native script plus a reading for languages not written in Latin letters", () => {
+    expect(forLanguage("zh")).toContain("Target language: Chinese");
+    expect(forLanguage("zh")).toContain("pinyin");
+    expect(forLanguage("ko")).toContain("Revised Romanization");
+  });
+
+  it("adds no script note for Latin-script languages", () => {
+    expect(forLanguage("de")).toContain("Target language: German");
+    expect(forLanguage("de")).not.toContain("native script");
+  });
+});

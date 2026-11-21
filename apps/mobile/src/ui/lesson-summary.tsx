@@ -3,7 +3,7 @@ import type { LessonScore } from "@scenespeak/core/lesson/scoring";
 import { color, outline, radius } from "../theme/tokens";
 import { ToyButton } from "./toy-button";
 
-const TITLES = ["Keep practising!", "Good start!", "¡Muy bien!", "¡Perfecto!"] as const;
+const TITLES = ["Keep practising!", "Good start!", "Great job!", "Perfect!"] as const;
 
 /** End-of-lesson card: stars, points and the phrases worth another go. */
 export const LessonSummary = ({ score, onExit }: { score: LessonScore; onExit: () => void }) => (

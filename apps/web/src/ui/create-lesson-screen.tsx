@@ -1,5 +1,6 @@
 import { type FormEvent, useEffect, useRef, useState } from "react";
 import { type GenerationStep, LESSON_PROMPT_MAX, type LibraryMatch, checkLessonPrompt } from "@scenespeak/core/lesson/generator";
+import { DEFAULT_LESSON_LANGUAGE, LESSON_LANGUAGES, type LessonLanguageCode, findLanguage } from "@scenespeak/core/language/languages";
 import type { LessonOrigin } from "@scenespeak/core/lesson/lesson-origin";
 import { type PlayableLesson, buildPlayableLesson } from "@scenespeak/core/lesson/playable-lesson";
 import { CATALOG } from "@scenespeak/core/scene/catalog/catalog";
@@ -42,6 +43,8 @@ export interface CreateLessonScreenProps {
 export const CreateLessonScreen = ({ onReady, onPlayLibrary, onCancel }: CreateLessonScreenProps) => {
   const { generator } = useServices();
   const [prompt, setPrompt] = useState("");
+  const [language, setLanguage] = useState<LessonLanguageCode>(DEFAULT_LESSON_LANGUAGE);
+  const chosen = findLanguage(language);
   const [status, setStatus] = useState<Status>({ kind: "editing" });
   const [inputError, setInputError] = useState<string | null>(null);
   const controller = useRef<AbortController | null>(null);
@@ -73,7 +76,7 @@ export const CreateLessonScreen = ({ onReady, onPlayLibrary, onCancel }: CreateL
     try {
       const result = await generator({
         prompt: request,
-        language: "es",
+        language,
         signal: current.signal,
         allowExisting,
         onProgress: (progress) => {
@@ -107,8 +110,39 @@ export const CreateLessonScreen = ({ onReady, onPlayLibrary, onCancel }: CreateL
       </div>
 
       <form className="card panel" onSubmit={submit} aria-busy={working}>
+        <fieldset className="language-picker" disabled={working} aria-describedby="language-help">
+          <legend className="field-label">Which language?</legend>
+          <div className="language-options">
+            {LESSON_LANGUAGES.map((option) => (
+              <label key={option.code} className={`language-option ${language === option.code ? "active" : ""}`}>
+                <input
+                  type="radio"
+                  name="lesson-language"
+                  value={option.code}
+                  checked={language === option.code}
+                  onChange={() => setLanguage(option.code)}
+                />
+                <span lang={option.code} className="language-native">
+                  {option.nativeName}
+                </span>
+                <span className="language-english">{option.name}</span>
+              </label>
+            ))}
+          </div>
+          <p id="language-help" className="audio-note" aria-live="polite">
+            {chosen?.onDevice ? (
+              <>
+                <span className="badge device">On your device</span> {chosen.name} replies are graded privately by Gemini Nano when your browser has it.
+              </>
+            ) : (
+              <>
+                <span className="badge cloud">Cloud</span> On-device AI doesn't speak {chosen?.name ?? "this language"} yet, so its replies are graded in the cloud.
+              </>
+            )}
+          </p>
+        </fieldset>
         <label htmlFor="lesson-prompt" className="field-label">
-          What do you want to be able to say? (English or Spanish)
+          What do you want to be able to say? (English or {chosen?.name ?? "the language you're learning"})
         </label>
         <textarea
           id="lesson-prompt"
@@ -173,13 +207,15 @@ export const CreateLessonScreen = ({ onReady, onPlayLibrary, onCancel }: CreateL
             {STEPS.map((step, index) => {
               const state =
                 index < activeIndex ? "done" : index > activeIndex ? "pending" : status.kind === "failed" ? "failed" : "active";
+              // Languages Nano can't speak skip the device for these steps too.
+              const where = step.where === "device" && !chosen?.onDevice ? "cloud" : step.where;
               return (
                 <li key={step.id} className={`step ${state}`}>
                   <span className="step-mark" aria-hidden="true">
                     {state === "done" ? "✓" : state === "failed" ? "!" : index + 1}
                   </span>
                   <span>
-                    {step.label} <span className={`badge ${step.where === "cloud" ? "cloud" : "device"}`}>{WHERE_LABEL[step.where]}</span>
+                    {step.label} <span className={`badge ${where === "cloud" ? "cloud" : "device"}`}>{WHERE_LABEL[where]}</span>
                     <span className="visually-hidden"> ({state})</span>
                   </span>
                 </li>

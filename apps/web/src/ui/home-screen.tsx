@@ -2,8 +2,9 @@ import type { LoadedCommunityLesson } from "@scenespeak/core/lesson/community/co
 import type { FeaturedLesson } from "@scenespeak/core/lesson/featured/featured-lessons";
 import type { LessonMode } from "@scenespeak/core/lesson/lesson-mode";
 
-const LANGUAGE_NAMES = new Intl.DisplayNames(["en"], { type: "language" });
-export const languageName = (code: string) => LANGUAGE_NAMES.of(code) ?? code;
+import { languageName } from "@scenespeak/core/language/languages";
+
+export { languageName };
 
 export const LessonCard = ({ lesson, onPlay, credit }: { lesson: FeaturedLesson; onPlay: (lesson: FeaturedLesson, mode: LessonMode) => void; credit?: string }) => (
   <li className="card lesson-card">

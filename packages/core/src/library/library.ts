@@ -31,12 +31,12 @@ export const LibraryEntry = z.object({
 });
 export type LibraryEntry = z.infer<typeof LibraryEntry>;
 
-/** Server rows → visible entries for one language, most upvoted first. Bad or hidden rows are dropped. */
-export const rankLibrary = (rows: readonly unknown[], language: string): LibraryEntry[] =>
+/** Server rows → visible entries for one language (null: every language), most upvoted first. Bad or hidden rows are dropped. */
+export const rankLibrary = (rows: readonly unknown[], language: string | null): LibraryEntry[] =>
   rows
     .flatMap((row) => {
       const parsed = LibraryEntry.safeParse(row);
-      return parsed.success && !parsed.data.hidden && parsed.data.language === language ? [parsed.data] : [];
+      return parsed.success && !parsed.data.hidden && (language === null || parsed.data.language === language) ? [parsed.data] : [];
     })
     .toSorted((a, b) => b.votes - a.votes || a.title.localeCompare(b.title));
 

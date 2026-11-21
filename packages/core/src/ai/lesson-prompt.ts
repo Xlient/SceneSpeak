@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { languageName, romanizationOf } from "../language/languages";
 import type { Catalog } from "../scene/catalog/catalog-types";
 import { sceneRecipeJsonSchema } from "../scene/recipe/scene-recipe";
 import { type Intent, LEARNER_SPEAKER, Scenario } from "../schemas";
@@ -55,8 +56,13 @@ export interface LessonPromptInput {
   catalog: Catalog;
 }
 
-const languageName = (code: string): string =>
-  new Intl.DisplayNames(["en"], { type: "language" }).of(code) ?? code;
+/** Native script for the lines; vocab gets a reading so beginners can say new words. */
+const scriptNote = (code: string): string | null => {
+  const romanization = romanizationOf(code);
+  return romanization === null
+    ? null
+    : `Write lines in ${languageName(code)}'s native script. In vocab, put the ${romanization} in brackets after each word.`;
+};
 
 const listIds = (items: readonly { id: string; label: string }[]): string =>
   items.map((item) => `- ${item.id}: ${item.label}`).join("\n");
@@ -68,6 +74,7 @@ export const buildLessonPrompt = ({ request, topic, intents, language, catalog }
     `Learner's request: <request>${escapeTags(request)}</request>`,
     `Summary: ${topic}`,
     `Target language: ${languageName(language)}`,
+    scriptNote(language),
     ...(intents.length > 0 ? [`Skills that may fit (use only those that suit the request): ${intents.join(", ")}`] : []),
     `Learner speaker id: "${LEARNER_SPEAKER}"`,
     "",
@@ -76,7 +83,9 @@ export const buildLessonPrompt = ({ request, topic, intents, language, catalog }
     `Characters:\n${listIds(catalog.characters)}`,
     "",
     `Props:\n${listIds(catalog.props)}`,
-  ].join("\n");
+  ]
+    .filter((part) => part !== null)
+    .join("\n");
 
 export const buildRepairPrompt = (previous: string, problems: readonly string[]): string =>
   [

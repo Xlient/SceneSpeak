@@ -8,7 +8,7 @@ export const FeedbackCard = ({ result }: { result: GradeResult }) => {
   const { grade, source } = result;
   return (
     <View style={[styles.card, { backgroundColor: grade.ok ? color.mint : color.peach }]} accessibilityLiveRegion="polite">
-      <Text style={styles.title}>{grade.ok ? "¡Muy bien! Nice one." : "Almost! Try again?"}</Text>
+      <Text style={styles.title}>{grade.ok ? "Nice one!" : "Almost! Try again?"}</Text>
       <Text style={styles.text}>Score: {grade.score} / 100</Text>
       {grade.correction ? (
         <Text style={styles.text}>

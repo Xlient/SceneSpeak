@@ -43,10 +43,18 @@ describe("buildHybridParams", () => {
     );
   });
 
-  it("tells the on-device model to expect English and Spanish text", () => {
-    const createOptions = buildHybridParams(InferenceMode.PREFER_ON_DEVICE).onDeviceParams?.createOptions;
-    expect(createOptions?.expectedInputs).toEqual([{ type: "text", languages: ["en", "es"] }]);
-    expect(createOptions?.expectedOutputs).toEqual([{ type: "text", languages: ["en", "es"] }]);
+  it("tells the on-device model to expect English plus the lesson language", () => {
+    const createOptions = buildHybridParams(InferenceMode.PREFER_ON_DEVICE, { language: "ja" }).onDeviceParams?.createOptions;
+    expect(createOptions?.expectedInputs).toEqual([{ type: "text", languages: ["en", "ja"] }]);
+    expect(createOptions?.expectedOutputs).toEqual([{ type: "text", languages: ["en", "ja"] }]);
+  });
+
+  it("expects English only when no language is given or Nano doesn't support it", () => {
+    for (const options of [{}, { language: "ko" }]) {
+      expect(buildHybridParams(InferenceMode.PREFER_ON_DEVICE, options).onDeviceParams?.createOptions?.expectedInputs).toEqual([
+        { type: "text", languages: ["en"] },
+      ]);
+    }
   });
 
   it("accepts other languages", () => {

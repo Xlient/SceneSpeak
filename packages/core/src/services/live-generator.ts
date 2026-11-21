@@ -5,6 +5,7 @@ import { MATCH_JSON_SCHEMA, MATCH_SYSTEM_INSTRUCTION, createLessonMatcher } from
 import { LESSON_SYSTEM_INSTRUCTION, lessonJsonSchema } from "../ai/lesson-prompt";
 import { createModel } from "../ai/model";
 import { SCREEN_JSON_SCHEMA, SCREEN_SYSTEM_INSTRUCTION } from "../ai/screen-request";
+import { modelLanguages } from "../language/languages";
 import type { LessonGenerator } from "../lesson/generator";
 import type { LibraryStore } from "../library/library";
 import { routeAiCall } from "../routing/route";
@@ -18,14 +19,14 @@ const WRITE_TIMEOUT_MS = 60_000;
 
 export type ModelRole = "screen" | "match" | "write";
 
-export const createGeneratorModel = (role: ModelRole, mode: InferenceMode, catalog: Catalog = CATALOG): TextModel => {
+export const createGeneratorModel = (role: ModelRole, mode: InferenceMode, catalog: Catalog = CATALOG, language?: string): TextModel => {
   switch (role) {
     case "screen":
-      return createModel(mode, { systemInstruction: SCREEN_SYSTEM_INSTRUCTION, jsonSchema: SCREEN_JSON_SCHEMA, timeoutMs: SCREEN_TIMEOUT_MS });
+      return createModel(mode, { systemInstruction: SCREEN_SYSTEM_INSTRUCTION, jsonSchema: SCREEN_JSON_SCHEMA, timeoutMs: SCREEN_TIMEOUT_MS, language });
     case "match":
-      return createModel(mode, { systemInstruction: MATCH_SYSTEM_INSTRUCTION, jsonSchema: MATCH_JSON_SCHEMA, timeoutMs: SCREEN_TIMEOUT_MS });
+      return createModel(mode, { systemInstruction: MATCH_SYSTEM_INSTRUCTION, jsonSchema: MATCH_JSON_SCHEMA, timeoutMs: SCREEN_TIMEOUT_MS, language });
     case "write":
-      return createModel(mode, { systemInstruction: LESSON_SYSTEM_INSTRUCTION, jsonSchema: lessonJsonSchema(catalog), timeoutMs: WRITE_TIMEOUT_MS });
+      return createModel(mode, { systemInstruction: LESSON_SYSTEM_INSTRUCTION, jsonSchema: lessonJsonSchema(catalog), timeoutMs: WRITE_TIMEOUT_MS, language });
   }
 };
 
@@ -33,7 +34,7 @@ export interface LiveGeneratorDeps {
   deviceStatus: () => DeviceModelStatus;
   isOnline?: () => boolean;
   catalog?: Catalog;
-  makeModel?: (role: ModelRole, mode: InferenceMode) => TextModel;
+  makeModel?: (role: ModelRole, mode: InferenceMode, language: string) => TextModel;
   /** When set, requests already covered by a published lesson suggest that lesson instead. */
   library?: LibraryStore;
 }
@@ -43,31 +44,32 @@ export const createLiveGenerator = ({
   deviceStatus,
   isOnline = () => navigator.onLine,
   catalog = CATALOG,
-  makeModel = (role, mode) => createGeneratorModel(role, mode, catalog),
+  makeModel = (role, mode, language) => createGeneratorModel(role, mode, catalog, language),
   library,
 }: LiveGeneratorDeps): LessonGenerator => {
   const models = new Map<string, TextModel>();
-  const model = (role: ModelRole, mode: InferenceMode): TextModel => {
-    const key = `${role}:${mode}`;
+  const model = (role: ModelRole, mode: InferenceMode, language: string): TextModel => {
+    const key = `${role}:${mode}:${modelLanguages(language).join(",")}`;
     let found = models.get(key);
     if (!found) {
-      found = makeModel(role, mode);
+      found = makeModel(role, mode, language);
       models.set(key, found);
     }
     return found;
   };
 
   return async (request) => {
-    const common = { device: deviceStatus().kind, language: request.language, online: isOnline() };
+    const { language } = request;
+    const common = { device: deviceStatus().kind, language, online: isOnline() };
     const screenRoute = routeAiCall({ ...common, task: "screen", inputChars: request.prompt.length });
     const writeRoute = routeAiCall({ ...common, task: "generate" });
     const matchRoute = routeAiCall({ ...common, task: "match" });
     const generate = createLessonGenerator({
-      screenModel: model("screen", screenRoute.mode),
-      writeModel: model("write", writeRoute.mode),
+      screenModel: model("screen", screenRoute.mode, language),
+      writeModel: model("write", writeRoute.mode, language),
       catalog,
       ...(library
-        ? { findExisting: createLibraryFinder({ library, match: createLessonMatcher(model("match", matchRoute.mode)) }) }
+        ? { findExisting: createLibraryFinder({ library, match: createLessonMatcher(model("match", matchRoute.mode, language)) }) }
         : {}),
     });
     return generate(request);
