@@ -576,6 +576,52 @@ button.big {
   padding: 0.1rem 0.6rem;
 }
 
+.lesson-meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.filter-chips {
+  margin: 0;
+  padding: 0;
+  border: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+}
+
+.filter-chip {
+  position: relative;
+  padding: 0.2rem 0.75rem;
+  border: 2px solid var(--ink);
+  border-radius: 999px;
+  background: var(--cream);
+  box-shadow: 0 2px 0 var(--ink);
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: 0.85rem;
+  cursor: pointer;
+}
+
+.filter-chip input {
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.filter-chip.active {
+  background: var(--mint);
+  transform: translateY(2px);
+  box-shadow: none;
+}
+
+.filter-chip:has(input:focus-visible) {
+  outline: 3px solid var(--sky);
+  outline-offset: 2px;
+}
+
 /* Create a lesson */
 
 .create {
@@ -1961,4 +2007,23 @@ button.chip {
   border: 2px solid var(--ink);
   border-radius: var(--radius-small);
   background: var(--cream);
+}
+
+.language-group {
+  display: grid;
+  gap: 0.4rem;
+}
+
+.language-group-title {
+  margin: 0;
+  font-size: 0.85rem;
+}
+
+.chip-tag {
+  margin-left: 0.35rem;
+  padding: 0 0.4rem;
+  border: 1.5px solid var(--ink);
+  border-radius: 999px;
+  background: var(--sky);
+  font-size: 0.7rem;
 }

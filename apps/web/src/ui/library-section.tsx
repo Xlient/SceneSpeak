@@ -1,13 +1,15 @@
 import { useId, useState } from "react";
 import type { AuthStatus } from "@scenespeak/core/auth/auth-state";
 import type { LibraryEntry } from "@scenespeak/core/library/library";
-import { languageName } from "./home-screen";
+import { type LanguageFilter, matchesLanguage } from "@scenespeak/core/language/language-filter";
+import { languageName } from "@scenespeak/core/language/languages";
+import { LessonLanguageMeta } from "./language-badges";
 import { useLibrary } from "./use-library";
 
 export interface LibrarySectionProps {
   auth: AuthStatus;
-  /** null lists every language. */
-  language: string | null;
+  /** Shown languages; null shows every language. Filtered here, so changing it doesn't reload the library. */
+  filter: LanguageFilter;
   onPlay: (entry: LibraryEntry) => void;
   onCreate: () => void;
   onSignIn?: (() => void) | undefined;
@@ -18,12 +20,12 @@ const matches = (entry: LibraryEntry, query: string) => {
   return q === "" || `${entry.title} ${entry.topic}`.toLowerCase().includes(q);
 };
 
-export const LibrarySection = ({ auth, language, onPlay, onCreate, onSignIn }: LibrarySectionProps) => {
-  const { state, voted, canVote, toggleVote, report, notice } = useLibrary(auth, language);
+export const LibrarySection = ({ auth, filter, onPlay, onCreate, onSignIn }: LibrarySectionProps) => {
+  const { state, voted, canVote, toggleVote, report, notice } = useLibrary(auth, null);
   const [query, setQuery] = useState("");
   const [confirming, setConfirming] = useState<string | null>(null);
   const searchId = useId();
-  const entries = state.status === "ready" ? state.entries.filter((e) => matches(e, query)) : [];
+  const entries = state.status === "ready" ? state.entries.filter((e) => matchesLanguage(e.language, filter) && matches(e, query)) : [];
 
   return (
     <section aria-labelledby="library-title" aria-busy={state.status === "loading"}>
@@ -58,7 +60,7 @@ export const LibrarySection = ({ auth, language, onPlay, onCreate, onSignIn }: L
       {state.status === "failed" && <p className="error">{state.message}</p>}
       {state.status === "ready" && entries.length === 0 && (
         <p>
-          {query ? "No lessons match that search. " : "No shared lessons yet. "}
+          {query ? "No lessons match that search. " : filter ? `No shared ${languageName(filter)} lessons yet. ` : "No shared lessons yet. "}
           <button type="button" className="link-button" onClick={onCreate}>
             Create one
           </button>
@@ -74,9 +76,7 @@ export const LibrarySection = ({ auth, language, onPlay, onCreate, onSignIn }: L
               <li key={entry.id} className="card lesson-card library-card">
                 <h3>{entry.title}</h3>
                 <p>{entry.topic}</p>
-                <p className="pill small-pill">
-                  {languageName(entry.language)} · {entry.level}
-                </p>
+                <LessonLanguageMeta language={entry.language} level={entry.level} />
                 <p className="lesson-credit">By {entry.authorName}</p>
                 <div className="lesson-play-buttons">
                   <button type="button" onClick={() => onPlay(entry)} aria-label={`Play ${entry.title}`}>

@@ -1,6 +1,7 @@
 import { type FormEvent, useEffect, useRef, useState } from "react";
 import { type GenerationStep, LESSON_PROMPT_MAX, type LibraryMatch, checkLessonPrompt } from "@scenespeak/core/lesson/generator";
-import { DEFAULT_LESSON_LANGUAGE, LESSON_LANGUAGES, type LessonLanguageCode, findLanguage } from "@scenespeak/core/language/languages";
+import { languagesByInference } from "@scenespeak/core/language/language-filter";
+import { DEFAULT_LESSON_LANGUAGE, type LessonLanguageCode, findLanguage } from "@scenespeak/core/language/languages";
 import type { LessonOrigin } from "@scenespeak/core/lesson/lesson-origin";
 import { type PlayableLesson, buildPlayableLesson } from "@scenespeak/core/lesson/playable-lesson";
 import { CATALOG } from "@scenespeak/core/scene/catalog/catalog";
@@ -11,6 +12,12 @@ import { useServices } from "./services-context";
 const EXAMPLES = ["Opening a bank account", "Asking a neighbour to borrow a ladder", "Checking in at a hotel", "Buying fruit at the market"];
 
 type StepId = GenerationStep | "build";
+
+const { onDevice, cloudOnly } = languagesByInference();
+const LANGUAGE_GROUPS = [
+  { id: "device", title: "On your device", note: "Graded privately by Gemini Nano when your browser has it.", languages: onDevice },
+  { id: "cloud", title: "Cloud only", note: "On-device AI doesn't speak these yet.", languages: cloudOnly },
+] as const;
 
 // While the learner types their request, fetch the 3D code and models so the generated scene opens without waiting on them.
 const warmScene = () => {
@@ -112,23 +119,33 @@ export const CreateLessonScreen = ({ onReady, onPlayLibrary, onCancel }: CreateL
       <form className="card panel" onSubmit={submit} aria-busy={working}>
         <fieldset className="language-picker" disabled={working} aria-describedby="language-help">
           <legend className="field-label">Which language?</legend>
-          <div className="language-options">
-            {LESSON_LANGUAGES.map((option) => (
-              <label key={option.code} className={`language-option ${language === option.code ? "active" : ""}`}>
-                <input
-                  type="radio"
-                  name="lesson-language"
-                  value={option.code}
-                  checked={language === option.code}
-                  onChange={() => setLanguage(option.code)}
-                />
-                <span lang={option.code} className="language-native">
-                  {option.nativeName}
-                </span>
-                <span className="language-english">{option.name}</span>
-              </label>
-            ))}
-          </div>
+          {LANGUAGE_GROUPS.map((group) => (
+            <div key={group.id} className="language-group" role="group" aria-labelledby={`language-group-${group.id}`}>
+              <p id={`language-group-${group.id}`} className="language-group-title">
+                <span className={`badge ${group.id === "device" ? "device" : "cloud"}`}>
+                  <span aria-hidden="true">{group.id === "device" ? "🔒" : "☁️"}</span> {group.title}
+                </span>{" "}
+                {group.note}
+              </p>
+              <div className="language-options">
+                {group.languages.map((option) => (
+                  <label key={option.code} className={`language-option ${language === option.code ? "active" : ""}`}>
+                    <input
+                      type="radio"
+                      name="lesson-language"
+                      value={option.code}
+                      checked={language === option.code}
+                      onChange={() => setLanguage(option.code)}
+                    />
+                    <span lang={option.code} className="language-native">
+                      {option.nativeName}
+                    </span>
+                    <span className="language-english">{option.name}</span>
+                  </label>
+                ))}
+              </div>
+            </div>
+          ))}
           <p id="language-help" className="audio-note" aria-live="polite">
             {chosen?.onDevice ? (
               <>
