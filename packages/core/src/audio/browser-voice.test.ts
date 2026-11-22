@@ -1,5 +1,5 @@
-import { describe, expect, it } from "vitest";
-import { type VoiceLike, pickVoice, rankVoices, voiceTags } from "./browser-voice";
+import { afterEach, describe, expect, it, vi } from "vitest";
+import { START_TIMEOUT_MS, type VoiceLike, pickVoice, rankVoices, speakWithBrowser, voiceTags } from "./browser-voice";
 
 const voice = (lang: string, name: string, localService = true, isDefault = false): VoiceLike => ({ lang, name, localService, default: isDefault });
 
@@ -49,5 +49,92 @@ describe("rankVoices and voiceTags", () => {
     expect(voiceTags(voice("es-MX", "Paulina (Premium)"))).toEqual(["premium"]);
     expect(voiceTags(voice("es-ES", "Google español", false))).toEqual(["online"]);
     expect(voiceTags(voice("es-ES", "Eddy (Spanish (Spain))"))).toEqual(["novelty"]);
+  });
+});
+
+describe("speakWithBrowser", () => {
+  class FakeUtterance {
+    lang = "";
+    rate = 1;
+    voice: unknown = null;
+    onstart: (() => void) | null = null;
+    onend: (() => void) | null = null;
+    onerror: ((e: { error: string }) => void) | null = null;
+    constructor(readonly text: string) {}
+  }
+
+  const fakeEngine = (outcome: (u: FakeUtterance) => "end" | "silent" | string) => {
+    const spoken: FakeUtterance[] = [];
+    const engine = {
+      getVoices: () => [{ name: "Kyoko", lang: "ja-JP", localService: true, default: false }],
+      cancel: vi.fn(),
+      speak: (u: FakeUtterance) => {
+        spoken.push(u);
+        const result = outcome(u);
+        if (result === "silent") return;
+        queueMicrotask(() => {
+          if (result !== "end") return u.onerror?.({ error: result });
+          u.onstart?.();
+          u.onend?.();
+        });
+      },
+    };
+    vi.stubGlobal("speechSynthesis", engine);
+    vi.stubGlobal("SpeechSynthesisUtterance", FakeUtterance);
+    return spoken;
+  };
+
+  afterEach(() => vi.unstubAllGlobals());
+
+  it("retries without the picked voice when it fails, then finishes", async () => {
+    const spoken = fakeEngine((u) => (u.voice ? "synthesis-failed" : "end"));
+    const done = vi.fn();
+    speakWithBrowser("こんにちは", "ja", done);
+    await vi.waitFor(() => expect(done).toHaveBeenCalledOnce());
+    expect(spoken.map((u) => [u.lang, Boolean(u.voice)])).toEqual([["ja-JP", true], ["ja-JP", false]]);
+  });
+
+  it("finishes instead of hanging when no voice can speak", async () => {
+    fakeEngine(() => "synthesis-failed");
+    const done = vi.fn();
+    speakWithBrowser("こんにちは", "ja", done);
+    await vi.waitFor(() => expect(done).toHaveBeenCalledOnce());
+  });
+
+  it("recovers when Chrome silently drops the utterance", async () => {
+    vi.useFakeTimers();
+    try {
+      const spoken = fakeEngine((u) => (u.voice ? "silent" : "end"));
+      const done = vi.fn();
+      speakWithBrowser("いらっしゃいませ", "ja", done);
+      await vi.advanceTimersByTimeAsync(START_TIMEOUT_MS + 10);
+      expect(done).toHaveBeenCalledOnce();
+      expect(spoken.map((u) => Boolean(u.voice))).toEqual([true, false]);
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it("finishes after the timeout when nothing ever plays", async () => {
+    vi.useFakeTimers();
+    try {
+      fakeEngine(() => "silent");
+      const done = vi.fn();
+      speakWithBrowser("hola", "es", done);
+      await vi.advanceTimersByTimeAsync(START_TIMEOUT_MS * 2 + 10);
+      expect(done).toHaveBeenCalledOnce();
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it("stays quiet when stopped", async () => {
+    fakeEngine(() => "interrupted");
+    const done = vi.fn();
+    const stop = speakWithBrowser("hola", "es", done);
+    await new Promise((r) => setTimeout(r, 5));
+    stop();
+    await new Promise((r) => setTimeout(r, 5));
+    expect(done).not.toHaveBeenCalled();
   });
 });

@@ -35,7 +35,12 @@ export const SceneBubble = ({ lessonId, line, speakerName, language, showTransla
     <div className={`scene-bubble ${learner ? "learner" : "character"}`} aria-live="polite">
       <span className="speaker">{learner ? "Your turn · say or type" : speakerName}</span>
       <p className="line-text">
-        <SentenceText text={line.text} language={language} {...(breakdown ? { breakdown } : {})} />
+        <SentenceText
+          text={line.text}
+          language={language}
+          {...(breakdown ? { breakdown } : {})}
+          playback={voice.wordsPlayable ? { onPlay: voice.playWord, playing: voice.playingWord } : undefined}
+        />
       </p>
       {/* Learners always see what their line means; character lines follow the Show English toggle. */}
       {(learner || showTranslation) && (
@@ -57,7 +62,8 @@ export const SceneBubble = ({ lessonId, line, speakerName, language, showTransla
             <span aria-hidden="true">🧩</span> {explaining ? "Thinking…" : "Grammar"}
           </button>
         )}
-        {voice.source === "none" && <span className="bubble-note">No voice for this language on this device.</span>}
+        {voice.wordsPlayable && <span className="bubble-note">Tap a word to hear it alone.</span>}
+        {voice.source === "none" &&<span className="bubble-note">No voice for this language on this device.</span>}
       </div>
     </div>
   );

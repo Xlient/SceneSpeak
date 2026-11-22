@@ -13,10 +13,15 @@ const findVoice = (language: string): Promise<VoiceState> => {
   if (!pending) {
     pending = Speech.getAvailableVoicesAsync()
       .then((voices): VoiceState => {
+        // Android returns an empty list until its speech engine has started; don't remember that as "no voice".
+        if (voices.length === 0) voiceCache.delete(language);
         const voice = pickPhoneVoice(voices, language);
         return voice ? { status: "ready", voice } : { status: "none" };
       })
-      .catch((): VoiceState => ({ status: "none" }));
+      .catch((): VoiceState => {
+        voiceCache.delete(language);
+        return { status: "none" };
+      });
     voiceCache.set(language, pending);
   }
   return pending;
@@ -38,17 +43,39 @@ export const useLineVoice = ({ text, language, autoPlay, onEnded }: LineVoiceOpt
 
   useEffect(() => {
     let live = true;
+    let retry: ReturnType<typeof setTimeout> | undefined;
     void findVoice(language).then((found) => {
-      if (live) setVoice(found);
+      if (!live) return;
+      setVoice(found);
+      // One late retry covers a speech engine that was still starting.
+      if (found.status === "none")
+        retry = setTimeout(() => void findVoice(language).then((again) => live && setVoice(again)), 1500);
     });
     return () => {
       live = false;
+      clearTimeout(retry);
     };
   }, [language]);
+
+  const [playingWord, setPlayingWord] = useState<number | null>(null);
+
+  // Single words never advance the lesson, so they skip onEnded.
+  const playWord = useCallback(
+    (word: string, index: number) => {
+      if (voice.status !== "ready") return;
+      void Speech.stop();
+      setPlaying(false);
+      setPlayingWord(index);
+      const done = () => setPlayingWord(null);
+      Speech.speak(word, { language: speechLocale(language), voice: voice.voice, rate: 0.9, onDone: done, onStopped: done, onError: done });
+    },
+    [language, voice],
+  );
 
   const play = useCallback(() => {
     if (voice.status !== "ready") return;
     void Speech.stop();
+    setPlayingWord(null);
     setPlaying(true);
     const done = () => setPlaying(false);
     Speech.speak(text, {
@@ -67,6 +94,7 @@ export const useLineVoice = ({ text, language, autoPlay, onEnded }: LineVoiceOpt
   const stop = useCallback(() => {
     void Speech.stop();
     setPlaying(false);
+    setPlayingWord(null);
   }, []);
 
   useEffect(() => {
@@ -75,5 +103,5 @@ export const useLineVoice = ({ text, language, autoPlay, onEnded }: LineVoiceOpt
 
   useEffect(() => () => void Speech.stop(), [text]);
 
-  return { available: voice.status === "ready", missing: voice.status === "none", playing, play, stop };
+  return { available: voice.status === "ready", missing: voice.status === "none", playing, play, stop, playingWord, playWord };
 };
