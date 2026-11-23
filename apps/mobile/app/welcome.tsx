@@ -7,6 +7,7 @@ import { TOUR_SEEN_KEY } from "../src/legal/app-data";
 import { describeNativeDevice } from "../src/onboarding/device-step";
 import { deviceStatus } from "../src/services/app-services";
 import { color, outline, radius } from "../src/theme/tokens";
+import { DownloadBar } from "../src/ui/download-bar";
 import { Bullets, Para } from "../src/ui/legal";
 import { ToyButton } from "../src/ui/toy-button";
 
@@ -57,6 +58,7 @@ export default function WelcomeScreen() {
       body: (
         <>
           <Para>{deviceStep.body}</Para>
+          {device.status === "downloading" && <DownloadBar progress={device.progress} label="Gemini Nano download" />}
           {deviceStep.canSetUp && <ToyButton label="Set up on-device AI" tint={color.mint} onPress={() => void deviceStatus.download()} />}
         </>
       ),

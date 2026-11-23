@@ -53,6 +53,8 @@ class HybridAiModule : Module() {
   private var appCheckReady = false
   @Volatile private var downloading = false
   @Volatile private var lastDownloadError: String? = null
+  @Volatile private var bytesTotal = 0L
+  @Volatile private var bytesDone = 0L
 
   override fun definition() = ModuleDefinition {
     Name("HybridAi")
@@ -116,6 +118,8 @@ class HybridAiModule : Module() {
     return buildMap {
       put("status", name)
       if (name == "available") put("modelName", "gemini-nano")
+      // Byte counts only exist for a download this app started; otherwise the UI shows an indeterminate bar.
+      if (name == "downloading" && bytesTotal > 0) put("progress", (bytesDone.toDouble() / bytesTotal).coerceIn(0.0, 1.0))
       if (reason != null) put("reason", reason)
     }
   }
@@ -123,10 +127,17 @@ class HybridAiModule : Module() {
   private fun startDownload() {
     downloading = true
     lastDownloadError = null
+    bytesTotal = 0L
+    bytesDone = 0L
     scope.launch {
       try {
         FirebaseAIOnDevice.download().collect { step ->
-          if (step is DownloadStatus.DownloadFailed) lastDownloadError = "the phone couldn't finish it"
+          when (step) {
+            is DownloadStatus.DownloadStarted -> bytesTotal = step.bytesToDownload
+            is DownloadStatus.DownloadInProgress -> bytesDone = step.totalBytesDownloaded
+            is DownloadStatus.DownloadFailed -> lastDownloadError = "the phone couldn't finish it"
+            else -> Unit
+          }
         }
       } catch (e: Exception) {
         lastDownloadError = e.message?.take(120) ?: "unknown error"

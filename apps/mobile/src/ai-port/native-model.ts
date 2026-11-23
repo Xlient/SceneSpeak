@@ -53,6 +53,7 @@ export const createNativeModel = (native: NativeHybridAi, pollMs = POLL_MS): Hyb
         const deadline = Date.now() + ms;
         let info = toInfo(await native.download(ms));
         while (info.status === "downloading" && Date.now() + pollMs < deadline && !options.signal.aborted) {
+          options.onUpdate?.(info);
           await sleep(pollMs, options.signal);
           info = toInfo(await native.status(Math.max(1, deadline - Date.now())));
         }
