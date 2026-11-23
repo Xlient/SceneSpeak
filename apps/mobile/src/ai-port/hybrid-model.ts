@@ -15,6 +15,12 @@ export const DeviceModelInfo = z.object({
   modelName: z.string().max(80).optional(),
   /** Plain-language reason for the Model Monitor, e.g. "Apple Intelligence is off". */
   reason: z.string().max(200).optional(),
+  /** Download progress from 0 to 1 while downloading, when the platform knows it. */
+  progress: z
+    .number()
+    .transform((n) => Math.min(1, Math.max(0, n)))
+    .optional()
+    .catch(undefined),
 });
 export type DeviceModelInfo = z.infer<typeof DeviceModelInfo>;
 
@@ -52,10 +58,15 @@ export interface CallOptions {
   timeoutMs: number;
 }
 
+export interface DownloadOptions extends CallOptions {
+  /** Each status seen while the download runs. */
+  onUpdate?: (info: DeviceModelInfo) => void;
+}
+
 export interface HybridModel {
   status(options: CallOptions): Promise<DeviceModelInfo>;
   /** Android starts the Gemini Nano download; iOS can't (the OS owns the model) and resolves with the status. */
-  download(options: CallOptions): Promise<DeviceModelInfo>;
+  download(options: DownloadOptions): Promise<DeviceModelInfo>;
   /** Optional latency win before the first call; resolves when done or unsupported. */
   warmUp(options: CallOptions): Promise<void>;
   generate(request: GenerateRequest, options: CallOptions): Promise<GenerateResult>;

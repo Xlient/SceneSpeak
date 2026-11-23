@@ -1,4 +1,4 @@
-import { describe, expect, it, vi } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import type { HybridModel } from "../ai-port/hybrid-model";
 import { createUnavailableModel } from "../ai-port/unavailable-model";
 import { createDeviceStatusStore } from "./device-status";
@@ -28,5 +28,36 @@ describe("createDeviceStatusStore", () => {
     const store = createDeviceStatusStore(port);
     await store.refresh();
     expect(store.get().status).toBe("unavailable");
+  });
+
+  describe("while a download runs", () => {
+    afterEach(() => vi.useRealTimers());
+
+    it("passes progress updates through", async () => {
+      const seen: (number | undefined)[] = [];
+      const port: HybridModel = {
+        ...createUnavailableModel("x"),
+        download: ({ onUpdate }) => {
+          onUpdate?.({ status: "downloading", progress: 0.4 });
+          return Promise.resolve({ status: "available" });
+        },
+      };
+      const store = createDeviceStatusStore(port);
+      store.subscribe(() => seen.push(store.get().progress));
+      await store.download();
+      expect(seen).toContain(0.4);
+    });
+
+    it("keeps checking until the download settles", async () => {
+      vi.useFakeTimers();
+      const status = vi.fn().mockResolvedValueOnce({ status: "downloading", progress: 0.9 }).mockResolvedValue({ status: "available" });
+      const store = createDeviceStatusStore({ ...createUnavailableModel("x"), status }, 10);
+      await store.refresh();
+      expect(store.get()).toEqual({ status: "downloading", progress: 0.9 });
+      await vi.advanceTimersByTimeAsync(10);
+      expect(store.get().status).toBe("available");
+      await vi.advanceTimersByTimeAsync(50);
+      expect(status).toHaveBeenCalledTimes(2);
+    });
   });
 });

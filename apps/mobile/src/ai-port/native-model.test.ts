@@ -54,6 +54,20 @@ describe("createNativeModel", () => {
     await expect(pending).rejects.toBeInstanceOf(AiAbortedError);
   });
 
+  it("clamps progress and drops a bad value", async () => {
+    const model = (raw: unknown) => createNativeModel(fakeNative({ status: () => Promise.resolve(raw) }));
+    await expect(model({ status: "downloading", progress: 1.7 }).status(options())).resolves.toEqual({ status: "downloading", progress: 1 });
+    await expect(model({ status: "downloading", progress: "half" }).status(options())).resolves.toEqual({ status: "downloading" });
+  });
+
+  it("reports each status while the download runs", async () => {
+    const status = vi.fn().mockResolvedValueOnce({ status: "downloading", progress: 0.5 }).mockResolvedValue({ status: "available" });
+    const onUpdate = vi.fn();
+    const model = createNativeModel(fakeNative({ download: () => Promise.resolve({ status: "downloading", progress: 0.1 }), status }), 1);
+    await model.download({ ...options(), onUpdate });
+    expect(onUpdate.mock.calls.map(([info]) => info.progress)).toEqual([0.1, 0.5]);
+  });
+
   it("polls the download until it settles", async () => {
     const status = vi.fn().mockResolvedValueOnce({ status: "downloading" }).mockResolvedValue({ status: "available" });
     const model = createNativeModel(fakeNative({ status }), 1);
